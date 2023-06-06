@@ -56,10 +56,15 @@ export class SFIMCCamp extends Plugin {
 
         // Add playerName to DataStore
         await this.ds.addPlayerName(playerName, name);
+
+        // Add playerName to be-named queue
+        await this.ds.addPlayerToBeNamed(playerName, name);
+
+        // TODO: Alert all online Instructors that a player is ready to be named
     }
 
     // tpa command
-    async tpaCommand(server: BedrockServer, playerName: string, cmd: string[]) {
+    async tpaCommand(server: BedrockServer, playerName: string, cmd: string[]): Promise<void> {
         // Check if command access is enabled
         if (await this.ds.getCommandAccessStatus() === false) return;
 
@@ -92,7 +97,7 @@ export class SFIMCCamp extends Plugin {
     }
 
     // tpaccept command
-    async tpacceptCommand(server: BedrockServer, playerName: string, cmd: string[]) {
+    async tpacceptCommand(server: BedrockServer, playerName: string, cmd: string[]): Promise<void> {
         // Check if command access is enabled
         if (await this.ds.getCommandAccessStatus() === false) return;
 
@@ -124,7 +129,7 @@ export class SFIMCCamp extends Plugin {
     }
 
     // tpdeny command
-    async tpdenyCommand(server: BedrockServer, playerName: string, cmd: string[]) {
+    async tpdenyCommand(server: BedrockServer, playerName: string, cmd: string[]): Promise<void> {
         // Check if command access is enabled
         if (await this.ds.getCommandAccessStatus() === false) return;
 
@@ -156,7 +161,7 @@ export class SFIMCCamp extends Plugin {
     }
 
     // tpcancel command
-    async tpcancelCommand(server: BedrockServer, playerName: string, cmd: string[]) {
+    async tpcancelCommand(server: BedrockServer, playerName: string, cmd: string[]): Promise<void> {
         // Check if command access is enabled
         if (await this.ds.getCommandAccessStatus() === false) return;
 
@@ -183,6 +188,11 @@ export class SFIMCCamp extends Plugin {
         // Remove tpa request from DataStore
         await this.ds.cancelTpaRequest(actualPlayerName);
         await server.sendCommand(`tellraw ${playerName} {"rawtext":[{"text":"Cancelled tpa request to ${actualTargetName}."}]}`);
+    }
+
+    // !n command
+    async nameUserCommand(server: BedrockServer, playerName: string, cmd: string[]): Promise<void> {
+
     }
 
     // Handle PlayerMessage
@@ -229,7 +239,7 @@ export class SFIMCCamp extends Plugin {
     }
 
     // Handle PlayerJoin
-    async handlePlayerJoin(event: PlayerJoinEvent) {
+    async handlePlayerJoin(event: PlayerJoinEvent): Promise<void> {
         const playerName: string = event.body.player.name;
         const server: BedrockServer = this.mwss.getServer(event.server);
 
@@ -238,14 +248,14 @@ export class SFIMCCamp extends Plugin {
 
         // Send message to player
         await server.sendCommand(`tellraw ${playerName} {"rawtext":[{"text":"Welcome back! To set your name, type !name <yourName>"}]}`);
-        
+
         // Set title
         await server.sendCommand(`title ${playerName} times 0 10000 0`);
         await server.sendCommand(`title ${playerName} title Please set your name using: !name <yourName>`);
     }
 
     // Handle PlayerLeave
-    async handlePlayerLeave(event: PlayerLeaveEvent) {
+    async handlePlayerLeave(event: PlayerLeaveEvent): Promise<void> {
         const player: Player = event.body.player;
         const playerName: string = player.name;
 
@@ -254,10 +264,16 @@ export class SFIMCCamp extends Plugin {
 
         // Remove playerName from DataStore
         await this.ds.removePlayerName(playerName);
+
+        // Remove player from tpa requests
+        await this.ds.cancelTpaRequest(playerName);
+
+        // Remove player from toBeNamed
+        await this.ds.removePlayerToBeNamed(playerName);
     }
 
     // Start
-    async start(mwss: MinecraftWebSocket) {
+    async start(mwss: MinecraftWebSocket): Promise<void> {
         this.mwss = mwss;
         this.mrest = mwss.getRestServer();
 

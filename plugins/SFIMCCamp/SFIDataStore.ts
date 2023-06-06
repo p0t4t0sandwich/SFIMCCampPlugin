@@ -25,7 +25,7 @@ export class SFIDataStore extends DataStore {
     // Methods
 
     // Add playerName to DataStore
-    async addPlayerName(playerName: string, name: string) {
+    async addPlayerName(playerName: string, name: string): Promise<void> {
         const nameData = await this.getData("PlayerNames");
 
         nameData[playerName] = name;
@@ -34,7 +34,7 @@ export class SFIDataStore extends DataStore {
     }
 
     // Remove playerName from DataStore
-    async removePlayerName(playerName: string) {
+    async removePlayerName(playerName: string): Promise<void> {
         const nameData = await this.getData("PlayerNames");
 
         delete nameData[playerName];
@@ -42,8 +42,26 @@ export class SFIDataStore extends DataStore {
         await this.saveData();
     }
 
+    // Add player to be named
+    async addPlayerToBeNamed(playerName: string, name: string): Promise<void> {
+        const nameData = await this.getData("PlayersToBeNamed");
+
+        nameData[playerName] = name;
+        await this.setData("PlayersToBeNamed", nameData);
+        await this.saveData();
+    }
+
+    // Remove player from being named
+    async removePlayerToBeNamed(playerName: string): Promise<void> {
+        const nameData = await this.getData("PlayersToBeNamed");
+
+        delete nameData[playerName];
+        await this.setData("PlayersToBeNamed", nameData);
+        await this.saveData();
+    }
+
     // Add instructor to DataStore
-    async addInstructor(playerName: string) {
+    async addInstructor(playerName: string): Promise<void> {
         const instructorData = await this.getData("Instructors");
 
         instructorData[playerName] = true;
@@ -52,7 +70,7 @@ export class SFIDataStore extends DataStore {
     }
 
     // Remove instructor from DataStore
-    async removeInstructor(playerName: string) {
+    async removeInstructor(playerName: string): Promise<void> {
         const instructorData = await this.getData("Instructors");
 
         delete instructorData[playerName];
@@ -107,7 +125,7 @@ export class SFIDataStore extends DataStore {
     }
 
     // Save player location to DataStore
-    async savePlayerLocation(player: Player) {
+    async savePlayerLocation(player: Player): Promise<void> {
         // Get player's actual name
         const mappedName = await this.mapPlayerToName(player.name);
         if (!mappedName) return;
@@ -125,7 +143,7 @@ export class SFIDataStore extends DataStore {
     }
 
     // Delete player location from DataStore
-    async deletePlayerLocation(playerName: string) {
+    async deletePlayerLocation(playerName: string): Promise<void> {
         // Get player's actual name
         const mappedName = await this.mapPlayerToName(playerName);
         if (!mappedName) return;
@@ -140,7 +158,7 @@ export class SFIDataStore extends DataStore {
     }
 
     // Save tpa request to DataStore
-    async saveTpaRequest(playerName: string, targetName: string, timeout: number) {
+    async saveTpaRequest(playerName: string, targetName: string, timeout: number): Promise<void> {
         const tpaData = await this.getData("TpaRequests");
 
         tpaData[playerName] = {
@@ -158,7 +176,7 @@ export class SFIDataStore extends DataStore {
     }
 
     // Delete tpa request from DataStore
-    async cancelTpaRequest(playerName: string) {
+    async cancelTpaRequest(playerName: string): Promise<void> {
         const tpaData = await this.getData("TpaRequests");
 
         delete tpaData[playerName];

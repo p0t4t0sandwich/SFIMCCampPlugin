@@ -62,19 +62,21 @@ export class SFIRestAPI {
                 </head>
                 <body>
                     <h1>Sci-Fi Minecraft Camp Administration</h1>
-                    <p>Add player to the instructor list:</p>
 
                     <iframe name="dummyframe" id="dummyframe" style="display: none;"></iframe>
 
+                    <p>Add player to the instructor list:</p>
                     <form action="/instructors/add" method="post" target="dummyframe">
                         <input type="text" id="playerName" name="playerName" placeholder="Player Name"><br>
                         <input type="submit" value="Submit">
                     </form>
+
                     <p>Remove player from the instructor list:</p>
                     <form action="/instructors/remove" method="post" target="dummyframe">
                         <input type="text" id="playerName" name="playerName" placeholder="Player Name"><br>
                         <input type="submit" value="Submit">
                     </form>
+
                     <p>Add instructors from file:</p>
                     <form action="/instructors/addFromFile" method="post" enctype="multipart/form-data" target="dummyframe">
                         <input type="file" id="instructorsFile" name="instructorsFile"><br>
@@ -142,7 +144,7 @@ export class SFIRestAPI {
         }
     }
 
-    // Add instructors from csv route
+    // Add instructors from file route
     async addInstructorsFromFileRoute(req: Request, res: Response, next: Function): Promise<void> {
         try {
             // Convert instructorsFile to a buffer, then to a string
