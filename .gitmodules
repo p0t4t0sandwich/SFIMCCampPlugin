@@ -1,0 +1,3 @@
+[submodule "minecraft-be-websocket-api"]
+	path = minecraft-be-websocket-api
+	url = git@github.com:p0t4t0sandwich/minecraft-be-websocket-api.git
