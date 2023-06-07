@@ -68,7 +68,8 @@ export class SFIMCCamp extends Plugin {
         // Add playerName to be-named queue
         await this.ds.addPlayerToBeNamed(playerName, name);
 
-        // TODO: Alert all online Instructors that a player is ready to be named
+        // Send message to instructors
+        await this.broadcastToInstructors(server, `${playerName} has been added to the naming queue. Use "!n" to teleport to them.`);
     }
 
     // tpa command
@@ -198,10 +199,96 @@ export class SFIMCCamp extends Plugin {
         await server.sendCommand(`tellraw ${playerName} {"rawtext":[{"text":"Cancelled tpa request to ${actualTargetName}."}]}`);
     }
 
-    // !n command
-    async nameUserCommand(server: BedrockServer, playerName: string, cmd: string[]): Promise<void> {
+    // n command
+    async nameUserQueueCommand(server: BedrockServer, playerName: string, cmd: string[]): Promise<void> {
+        // Check if the user has permission to use this command
+        if (await this.ds.isInstructor(playerName) === false) return;
 
+        let playerToBeNamed;
+        if (cmd.length < 2) {
+            // Get name from DataStore
+            playerToBeNamed = await this.ds.getNextPlayerToBeNamed()
+        } else {
+            // Get name from command
+            const actualPlayerName = cmd[1];
+            playerToBeNamed = {
+                playerName: await this.ds.mapNameToPlayer(actualPlayerName) || actualPlayerName,
+                name: actualPlayerName
+            }
+        }
+
+        if (!playerToBeNamed) {
+            await server.sendCommand(`tellraw ${playerName} {"rawtext":[{"text":"There are no players in the queue."}]}`);
+            return;
+        }
+
+        // Teleport player to target
+        await server.sendCommand(`tp ${playerName} ${playerToBeNamed.playerName}`);
+
+        // Get the location of the nametag chest
+        const chestLocation = await this.ds.getNameChestLocation(playerToBeNamed.name);
+
+        // Clone the chest to the player's location
+        await server.sendCommand(`execute "${playerName}" ~ ~ ~ clone ${chestLocation.x} ${chestLocation.y} ${chestLocation.z} ${chestLocation.x} ${chestLocation.y} ${chestLocation.z} ~ ~ ~`);
+
+        // Break the chest with setblock
+        await server.sendCommand(`execute "${playerName}" ~ ~ ~ setblock ~ ~ ~ air 0 destroy`);
+
+        // Sleep for 0.5 seconds
+        await sleep(500);
+
+        // Teleport the player to the toBeNamedPlayer
+        await server.sendCommand(`tellraw "${playerName}" {"rawtext":[{"text":"Teleporing to ${playerToBeNamed.name}."}]}`);
+        await server.sendCommand(`tp "${playerName}" ${playerToBeNamed.playerName}`);
+
+        // Give the player slowness 10 and resistance 10 for 15 seconds
+        await server.sendCommand(`effect ${playerToBeNamed.playerName} slowness 10 15`);
+        await server.sendCommand(`effect ${playerToBeNamed.playerName} resistance 10 15`);
+
+        // Remove player from queue
+        await this.ds.removePlayerToBeNamed(playerToBeNamed.playerName);
     }
+
+    // setnamechest command
+    async setNameChestCommand(server: BedrockServer, playerName: string, cmd: string[]): Promise<void> {
+        // Check if the user has permission to use this command
+        if (await this.ds.isInstructor(playerName) === false) return;
+
+        if (cmd.length < 5) {
+            await server.sendCommand(`tellraw ${playerName} {"rawtext":[{"text":"Usage: !setnamechest <name> <x> <y> <z>"}]}`);
+            return;
+        }
+
+        // Get the location of the chest from the comand
+        const name = cmd[1];
+        const x = parseInt(cmd[2]);
+        const y = parseInt(cmd[3]);
+        const z = parseInt(cmd[4]);
+
+        // Set the location of the chest in the DataStore
+        await this.ds.setNameChestLocation(name, { x, y, z });
+
+        // Send confirmation message
+        await server.sendCommand(`tellraw ${playerName} {"rawtext":[{"text":"Set the location of the nametag chest for ${name} to ${x} ${y} ${z}."}]}`);
+    }
+
+    // general functions
+
+    // broadcast message to all instructors
+    async broadcastToInstructors(server: BedrockServer, message: string): Promise<void> {
+        const instructors = await this.ds.getInstructors();
+        const playerList = (await server.listCommand()).getPlayers();
+
+        const instructorList = playerList.filter((player) => {
+            return instructors.includes(player);
+        });
+
+        for (const instructor of instructorList) {
+            await server.sendCommand(`tellraw ${instructor} {"rawtext":[{"text":"${message}"}]}`);
+        }
+    }
+
+    // Event handlers
 
     // Handle PlayerMessage
     async handlePlayerMessage(event: PlayerMessageEvent) {
@@ -241,6 +328,16 @@ export class SFIMCCamp extends Plugin {
                 await this.tpcancelCommand(server, playerName, cmd);
                 break;
 
+            // n command
+            case "!n":
+                await this.nameUserQueueCommand(server, playerName, cmd);
+                break;
+
+            // setnamechest command
+            case "!setnamechest":
+                await this.setNameChestCommand(server, playerName, cmd);
+                break;
+
             // Default
             default:
                 break;
@@ -265,8 +362,6 @@ export class SFIMCCamp extends Plugin {
         // Set title
         await server.sendCommand(`title ${playerName} times 0 10000 0`);
         await server.sendCommand(`title ${playerName} title Please set your name\nusing: !name yourName`);
-
-        // TODO: broadcast player join to instructors
     }
 
     // Handle PlayerLeave

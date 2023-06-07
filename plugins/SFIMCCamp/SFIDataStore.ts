@@ -15,6 +15,16 @@ interface playerLocation {
     };
 }
 
+interface nameData {
+    playerName: string;
+    name: string;
+}
+
+interface locationData {
+    x: number;
+    y: number;
+    z: number;
+}
 
 export class SFIDataStore extends DataStore {
     // Constructor
@@ -42,6 +52,15 @@ export class SFIDataStore extends DataStore {
         await this.saveData();
     }
 
+    // Get player to be named
+    async getNextPlayerToBeNamed(): Promise<nameData> {
+        const nameData = await this.getData("PlayersToBeNamed");
+
+        for (const player in nameData) {
+            if (nameData[player]) return { playerName: player, name: nameData[player] };
+        }
+    }
+
     // Add player to be named
     async addPlayerToBeNamed(playerName: string, name: string): Promise<void> {
         const nameData = await this.getData("PlayersToBeNamed");
@@ -55,8 +74,25 @@ export class SFIDataStore extends DataStore {
     async removePlayerToBeNamed(playerName: string): Promise<void> {
         const nameData = await this.getData("PlayersToBeNamed");
 
-        delete nameData[playerName];
+        if (nameData[playerName]) delete nameData[playerName];
+
         await this.setData("PlayersToBeNamed", nameData);
+        await this.saveData();
+    }
+
+    // Get Name Chest location
+    async getNameChestLocation(playerName: string): Promise<locationData> {
+        const chestData = await this.getData("NameChestLocations");
+
+        return chestData[playerName];
+    }
+
+    // Set Name Chest location
+    async setNameChestLocation(name: string, location: locationData) {
+        const chestData = await this.getData("NameChestLocations");
+
+        chestData[name] = location;
+        await this.setData("NameChestLocations", chestData);
         await this.saveData();
     }
 
