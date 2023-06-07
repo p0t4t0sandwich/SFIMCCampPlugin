@@ -5,9 +5,15 @@
 import { BedrockServer } from "../../minecraft-be-websocket-api/lib/BedrockServer.js";
 import { MinecraftWebSocket } from "../../minecraft-be-websocket-api/lib/MinecraftWebSocket.js";
 import { Plugin } from "../../minecraft-be-websocket-api/lib/Plugin.js";
-import { EventName, Player, PlayerJoinEvent, PlayerLeaveEvent, PlayerMessageEvent } from "../../minecraft-be-websocket-api/lib/events/Events.js";
+import { EventName, Player, PlayerJoinEvent, PlayerLeaveEvent, PlayerMessageBody, PlayerMessageEvent } from "../../minecraft-be-websocket-api/lib/events/Events.js";
 import { SFIDataStore } from './SFIDataStore.js';
 import { SFIRestAPI } from './SFIRestAPI.js';
+
+
+// Sleep function
+function sleep(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 
 // SFIMCCamp class - Main plugin class
@@ -34,13 +40,15 @@ export class SFIMCCamp extends Plugin {
 
     // Methods
 
-    // Name command
+    // Commands
+
+    // name command
     async nameCommand(server: BedrockServer, playerName: string, cmd: string[]) {
         // Check if command access is enabled
         if (await this.ds.getCommandAccessStatus() === false) return;
 
         if (cmd.length < 2) {
-            await server.sendCommand(`tellraw ${playerName} {"rawtext":[{"text":"Usage: !name <yourName>"}]}`);
+            await server.sendCommand(`tellraw ${playerName} {"rawtext":[{"text":"Usage: !name yourName"}]}`);
             return;
         }
 
@@ -84,7 +92,7 @@ export class SFIMCCamp extends Plugin {
         const actualPlayerName = await this.ds.mapPlayerToName(playerName);
 
         if (!actualPlayerName) {
-            await server.sendCommand(`tellraw ${playerName} {"rawtext":[{"text":"You must set your name with "!name <yourName>" before using this command."}]}`);
+            await server.sendCommand(`tellraw ${playerName} {"rawtext":[{"text":"You must set your name with "!name yourName" before using this command."}]}`);
             return;
         }
 
@@ -112,7 +120,7 @@ export class SFIMCCamp extends Plugin {
         const actualPlayerName = await this.ds.mapPlayerToName(playerName);
 
         if (!actualPlayerName) {
-            await server.sendCommand(`tellraw ${playerName} {"rawtext":[{"text":"You must set your name with "!name <yourName>" before using this command."}]}`);
+            await server.sendCommand(`tellraw ${playerName} {"rawtext":[{"text":"You must set your name with "!name yourName" before using this command."}]}`);
             return;
         }
 
@@ -144,7 +152,7 @@ export class SFIMCCamp extends Plugin {
         const actualPlayerName = await this.ds.mapPlayerToName(playerName);
 
         if (!actualPlayerName) {
-            await server.sendCommand(`tellraw ${playerName} {"rawtext":[{"text":"You must set your name with "!name <yourName>" before using this command."}]}`);
+            await server.sendCommand(`tellraw ${playerName} {"rawtext":[{"text":"You must set your name with "!name yourName" before using this command."}]}`);
             return;
         }
 
@@ -175,7 +183,7 @@ export class SFIMCCamp extends Plugin {
         const actualPlayerName = await this.ds.mapPlayerToName(playerName);
 
         if (!actualPlayerName) {
-            await server.sendCommand(`tellraw ${playerName} {"rawtext":[{"text":"You must set your name with "!name <yourName>" before using this command."}]}`);
+            await server.sendCommand(`tellraw ${playerName} {"rawtext":[{"text":"You must set your name with "!name yourName" before using this command."}]}`);
             return;
         }
 
@@ -197,9 +205,10 @@ export class SFIMCCamp extends Plugin {
 
     // Handle PlayerMessage
     async handlePlayerMessage(event: PlayerMessageEvent) {
-        const server: BedrockServer = this.mwss.getServer(event.server);
-        const playerName: string = event.body.sender;
-        const cmd = event.body.message.split(" ");
+        event = new PlayerMessageEvent(event);
+        const server: BedrockServer = this.mwss.getServer(event.getServer());
+        const playerName: string = event.getSender();
+        const cmd = event.getMessage().split(" ");
 
         // Ignore messages from the websocket server
         if (playerName == "Teacher") return
@@ -240,18 +249,24 @@ export class SFIMCCamp extends Plugin {
 
     // Handle PlayerJoin
     async handlePlayerJoin(event: PlayerJoinEvent): Promise<void> {
-        const playerName: string = event.body.player.name;
-        const server: BedrockServer = this.mwss.getServer(event.server);
+        event = new PlayerJoinEvent(event);
+        const playerName: string = event.getPlayer().name;
+        const server: BedrockServer = this.mwss.getServer(event.getServer());
+
+        // Sleep for 5 seconds
+        await sleep(5000);
 
         // Set gamemode to adventure
         await server.sendCommand(`gamemode adventure ${playerName}`);
 
         // Send message to player
-        await server.sendCommand(`tellraw ${playerName} {"rawtext":[{"text":"Welcome back! To set your name, type !name <yourName>"}]}`);
+        await server.sendCommand(`tellraw ${playerName} {"rawtext":[{"text":"Welcome back! To set your name, type !name yourName"}]}`);
 
         // Set title
         await server.sendCommand(`title ${playerName} times 0 10000 0`);
-        await server.sendCommand(`title ${playerName} title Please set your name using: !name <yourName>`);
+        await server.sendCommand(`title ${playerName} title Please set your name\nusing: !name yourName`);
+
+        // TODO: broadcast player join to instructors
     }
 
     // Handle PlayerLeave
