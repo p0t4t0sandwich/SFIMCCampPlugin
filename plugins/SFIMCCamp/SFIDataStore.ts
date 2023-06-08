@@ -47,7 +47,7 @@ export class SFIDataStore extends DataStore {
     async removePlayerName(playerName: string): Promise<void> {
         const nameData = await this.getData("PlayerNames");
 
-        delete nameData[playerName];
+        if (nameData[playerName]) delete nameData[playerName];
         await this.setData("PlayerNames", nameData);
         await this.saveData();
     }
@@ -109,7 +109,7 @@ export class SFIDataStore extends DataStore {
     async removeInstructor(playerName: string): Promise<void> {
         const instructorData = await this.getData("Instructors");
 
-        delete instructorData[playerName];
+        if (instructorData[playerName]) delete instructorData[playerName];
         await this.setData("Instructors", instructorData);
         await this.saveData();
     }
@@ -187,7 +187,7 @@ export class SFIDataStore extends DataStore {
         // Delete player location
         const locationData = await this.getData("PlayerLocations");
 
-        delete locationData[mappedName];
+        if (locationData[mappedName]) delete locationData[mappedName];
 
         await this.setData("PlayerLocations", locationData);
         await this.saveData();
@@ -215,7 +215,7 @@ export class SFIDataStore extends DataStore {
     async cancelTpaRequest(playerName: string): Promise<void> {
         const tpaData = await this.getData("TpaRequests");
 
-        delete tpaData[playerName];
+        if (tpaData[playerName]) delete tpaData[playerName];
 
         await this.setData("TpaRequests", tpaData);
         await this.saveData();
@@ -240,5 +240,23 @@ export class SFIDataStore extends DataStore {
         const commandAccessData = await this.getData("CommandAccess");
 
         return commandAccessData.enabled;
+    }
+
+    // Add camper to DataStore
+    async addCamper(playerName: string): Promise<void> {
+        const camperData = await this.getData("Campers");
+
+        camperData[playerName] = true;
+        await this.setData("Campers", camperData);
+        await this.saveData();
+    }
+
+    // Remove camper from DataStore
+    async removeCamper(playerName: string): Promise<void> {
+        const camperData = await this.getData("Campers");
+
+        if (camperData[playerName]) delete camperData[playerName];
+        await this.setData("Campers", camperData);
+        await this.saveData();
     }
 }
