@@ -3,27 +3,10 @@
 
 import express, { Express, Request, Response, Router } from 'express';
 import multer from 'multer';
-import { networkInterfaces } from 'os';
+
 
 import { SFIDataStore } from './SFIDataStore.js';
-
-// TODO: test this on a rasp pi
-// const nets = networkInterfaces();
-// const results = Object.create(null); // Or just '{}', an empty object
-// for (const name of Object.keys(nets)) {
-//     for (const net of nets[name]) {
-//         // Skip over non-IPv4 and internal (i.e. 127.0.0.1) addresses
-//         // 'IPv4' is in Node <= 17, from 18 it's a number 4 or 6
-//         const familyV4Value = typeof net.family === 'string' ? 'IPv4' : 4
-//         if (net.family === familyV4Value && !net.internal) {
-//             if (!results[name]) {
-//                 results[name] = [];
-//             }
-//             results[name].push(net.address);
-//         }
-//     }
-// }
-// console.log(results);
+import { SFIMCCamp } from './SFIMCCamp.js';
 
 export class SFIRestAPI {
     // Properties
@@ -31,10 +14,17 @@ export class SFIRestAPI {
     private port: number = <number><unknown>process.env.PLUGIN_REST_PORT || 4007;
     private router: Router = Router();
     private app: Express = express();
+    private sfiPlugin: SFIMCCamp;
     private ds: SFIDataStore;
 
     // Constructor
-    constructor(ds: SFIDataStore) {
+    constructor(sfiPlugin: SFIMCCamp, ds: SFIDataStore) {
+        // Set IP
+        this.ip = sfiPlugin.mwss.getIpAddress();
+
+        // Set plugin
+        this.sfiPlugin = sfiPlugin;
+
         // Set DataStore
         this.ds = ds;
 
@@ -57,6 +47,12 @@ export class SFIRestAPI {
 
         // Add campers from file route
         this.router.post('/campers/addFromFile', multer().single("campersFile"), this.addCampersFromFileRoute.bind(this));
+
+        // Pause servers route
+        this.router.post('/servers/pause', this.pauseServersRoute.bind(this));
+        
+        // Unpause servers route
+        this.router.post('/servers/unpause', this.unpauseServersRoute.bind(this));
 
         // Start webserver
         this.app.listen(this.port, () => {
@@ -81,8 +77,27 @@ export class SFIRestAPI {
                         }
                     </style>
                 </head>
+
+                <script>
+                    function pauseServers() {
+                        fetch("/servers/pause", {
+                            method: "POST"
+                        });
+                    }
+
+                    function unpauseServers() {
+                        fetch("/servers/unpause", {
+                            method: "POST"
+                        });
+                    }
+                </script>
+
                 <body>
                     <h1>Sci-Fi Minecraft Camp Administration</h1>
+
+                    <p>Pause buttons:</p>
+                    <button onclick="pauseServers()">Pause Servers</button>
+                    <button onclick="unpauseServers()">Unpause Servers</button>
 
                     <iframe name="dummyframe" id="dummyframe" style="display: none;"></iframe>
 
@@ -225,6 +240,44 @@ export class SFIRestAPI {
             res.type("application/json")
                 .status(200)
                 .json({ "message": "Campers added from file", "filePath": req.file.path });
+
+        // Serverside error response
+        } catch (err) {
+            console.log(err);
+            res.type("application/json")
+                .status(500)
+                .json({ "message": "Internal Server Error", "error": err });
+        }
+    }
+
+    // Pause servers route
+    async pauseServersRoute(req: Request, res: Response, next: Function): Promise<void> {
+        try {
+            // Pause servers
+            await this.sfiPlugin.pauseAllServers();
+
+            res.type("application/json")
+                .status(200)
+                .json({ "message": "Servers paused" });
+
+        // Serverside error response
+        } catch (err) {
+            console.log(err);
+            res.type("application/json")
+                .status(500)
+                .json({ "message": "Internal Server Error", "error": err });
+        }
+    }
+
+    // Unpause servers route
+    async unpauseServersRoute(req: Request, res: Response, next: Function): Promise<void> {
+        try {
+            // Unpause servers
+            await this.sfiPlugin.unpauseAllServers();
+
+            res.type("application/json")
+                .status(200)
+                .json({ "message": "Servers unpaused" });
 
         // Serverside error response
         } catch (err) {

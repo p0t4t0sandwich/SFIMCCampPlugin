@@ -334,6 +334,31 @@ export class SFIMCCamp extends Plugin {
         await server.tellCommand(playerName, `Set command access to ${access}.`);
     }
 
+    // nametitle command
+    async nameTitleCommand(server: BedrockServer, playerName: string, cmd: string[]): Promise<void> {
+        // Check if the user has permission to use this command
+        if (await this.ds.isInstructor(playerName) === false) return;
+
+        if (cmd.length < 2) {
+            await server.tellCommand(playerName, "Usage: !nametitle MinecraftPlayerName");
+            return;
+        }
+
+        // Get the name from the command
+        const name = cmd[1];
+
+        // Run join functions
+        // Set gamemode to adventure
+        await server.gamemodeCommand("adventure", name);
+
+        // Send message to player
+        await server.tellCommand(name, "Welcome back! To set your name, type !name yourName");
+
+        // Set title
+        await server.sendCommand(`title ${name} times 0 10000 0`);
+        await server.sendCommand(`title ${name} title Please set your name\nusing: !name yourName`);
+    }
+
     // general functions
 
     // broadcast message to all instructors
@@ -347,6 +372,24 @@ export class SFIMCCamp extends Plugin {
 
         for (const instructor of instructorList) {
             await server.tellCommand(instructor, message);
+        }
+    }
+
+    // Pause all servers
+    async pauseAllServers(): Promise<void> {
+        const serversNames = this.mwss.getServerNames();
+        for (const serversName of serversNames) {
+            const server = this.mwss.getServer(serversName);
+            await server.globalpauseCommand(true);
+        }
+    }
+
+    // Unpause all servers
+    async unpauseAllServers(): Promise<void> {
+        const serversNames = this.mwss.getServerNames();
+        for (const serversName of serversNames) {
+            const server = this.mwss.getServer(serversName);
+            await server.globalpauseCommand(false);
         }
     }
 
@@ -391,13 +434,21 @@ export class SFIMCCamp extends Plugin {
                 break;
 
             // TODO: tpahere command
-            
+
             // gamemode command
             case "!gamemode":
                 await this.gamemodeCommand(server, playerName, cmd);
                 break;
 
-            // TODO: gmc and gms commands
+            // gmc command
+            case "!gmc":
+                await this.gamemodeCommand(server, playerName, ["!gamemode", "creative"]);
+                break;
+
+            // gms command
+            case "!gms":
+                await this.gamemodeCommand(server, playerName, ["!gamemode", "survival"]);
+                break;
 
             // n command
             case "!n":
@@ -414,6 +465,11 @@ export class SFIMCCamp extends Plugin {
                 await this.commandAccessCommand(server, playerName, cmd);
                 break;
 
+            // nametitle command
+            case "!nametitle":
+                await this.nameTitleCommand(server, playerName, cmd);
+                break;
+
             // Default
             default:
                 break;
@@ -425,6 +481,11 @@ export class SFIMCCamp extends Plugin {
         event = new PlayerJoinEvent(event);
         const playerName: string = event.getPlayer().name;
         const server: BedrockServer = this.mwss.getServer(event.getServer());
+
+        //
+        console.log("PlayerJoinEvent");
+        console.log(event.getPlayer());
+        //
 
         // Sleep for 5 seconds
         await sleep(5000);
@@ -446,6 +507,11 @@ export class SFIMCCamp extends Plugin {
         const player: Player = event.getPlayer();
         const playerName: string = player.name;
 
+        //
+        console.log("PlayerLeaveEvent");
+        console.log(event.getPlayer());
+        //
+
         // Save player location to DataStore
         await this.ds.savePlayerLocation(player);
 
@@ -464,7 +530,7 @@ export class SFIMCCamp extends Plugin {
         this.mwss = mwss;
         this.mrest = mwss.getRestServer();
 
-        this.restAPI = new SFIRestAPI(this.ds);
+        this.restAPI = new SFIRestAPI(this, this.ds);
 
         console.log("Sci-Fi Minecraft Camp plugin started!");
     }
