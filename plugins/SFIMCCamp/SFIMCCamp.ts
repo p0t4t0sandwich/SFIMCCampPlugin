@@ -6,7 +6,7 @@ import { BedrockServer } from "../../minecraft-be-websocket-api/lib/BedrockServe
 import { MinecraftWebSocket } from "../../minecraft-be-websocket-api/lib/MinecraftWebSocket.js";
 import { Plugin } from "../../minecraft-be-websocket-api/lib/Plugin.js";
 import { EventName, Player, PlayerJoinEvent, PlayerLeaveEvent, PlayerMessageEvent } from "../../minecraft-be-websocket-api/lib/events/Events.js";
-import { SFIDataStore } from './SFIDataStore.js';
+import { SFIDataStore, SFIPlayerData } from './SFIDataStore.js';
 import { SFIRestAPI } from './SFIRestAPI.js';
 
 
@@ -15,12 +15,18 @@ function sleep(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Interfaces
+interface PlayerDataMap {
+    [key: string]: SFIPlayerData;
+}
+
 
 // SFIMCCamp class - Main plugin class
 export class SFIMCCamp extends Plugin {
     // Properties
     private ds: SFIDataStore = new SFIDataStore();
     private restAPI: SFIRestAPI;
+    private playerDataMap: PlayerDataMap = {};
 
     // Constructor
     constructor() {
@@ -40,12 +46,13 @@ export class SFIMCCamp extends Plugin {
 
     // Methods
 
-    // Commands
+    // ----------------------------- Commands -----------------------------
 
     // name command
     async nameCommand(server: BedrockServer, playerName: string, cmd: string[]) {
         // Check if command access is enabled
-        if (await this.ds.getCommandAccessStatus() === false) return;
+        const playerData: SFIPlayerData = this.playerDataMap[playerName];
+        if (playerData && playerData.commandAccess === false) return;
 
         if (cmd.length < 2) {
             await server.tellCommand(playerName, "Usage: !name yourName");
@@ -53,20 +60,20 @@ export class SFIMCCamp extends Plugin {
         }
 
         // Get player's name from message
-        const name = cmd[1];
+        const realName = cmd[1];
 
         // Announce name change
-        await server.sayCommand(`${playerName} changed their name to ${name}`);
+        await server.sayCommand(`${playerName} changed their name to ${realName}`);
 
         // Clear and Reset title message
         await server.sendCommand(`title ${playerName} clear`);
         await server.sendCommand(`title ${playerName} reset`);
 
-        // Add playerName to DataStore
-        await this.ds.addPlayerName(playerName, name);
+        // Add playerName to playerData
+        playerData.setRealName(realName);
 
         // Add playerName to be-named queue
-        await this.ds.addPlayerToBeNamed(playerName, name);
+        await this.ds.addPlayerNameQueue(playerName, realName);
 
         // Send message to instructors
         await this.broadcastToInstructors(server, `${playerName} has been added to the naming queue. Use "!n" to teleport to them.`);
@@ -75,40 +82,54 @@ export class SFIMCCamp extends Plugin {
     // tpa command
     async tpaCommand(server: BedrockServer, playerName: string, cmd: string[]): Promise<void> {
         // Check if command access is enabled
-        if (await this.ds.getCommandAccessStatus() === false) return;
+        const playerData: SFIPlayerData = this.playerDataMap[playerName];
+        if (playerData && playerData.commandAccess === false) return;
 
         if (cmd.length < 2) {
             await server.tellCommand(playerName, "Usage: !tpa <playerName>");
             return;
         }
 
-        if (await this.ds.hasTpaRequest(playerName)) {
+        if (playerData.hasActiveOutgoingTpaRequest()) {
             await server.tellCommand(playerName, "You already have an active tpa request.");
             return;
         }
 
         // Get names from DataStore
-        const actualTargetName = cmd[1];
-        const targetName = await this.ds.mapNameToPlayer(actualTargetName) || actualTargetName;
-        const actualPlayerName = await this.ds.mapPlayerToName(playerName);
+        const realTargetName: string = cmd[1];
+        let targetPlayer: SFIPlayerData = null;
 
-        if (!actualPlayerName) {
+        for (const target of Object.values(this.playerDataMap)) {
+            if (target.realName === realTargetName) {
+                targetPlayer = target;
+                break;
+            }
+        }
+
+        if (!targetPlayer) {
+            await server.tellCommand(playerName, `${realTargetName} is not a valid player.`);
+            return;
+        }
+
+        if (!playerData.realName || playerData.realName === "") {
             await server.tellCommand(playerName, 'You must set your name with "!name yourName" before using this command.');
             return;
         }
 
         // Send tpa request to target
-        await server.tellCommand(targetName, `${actualPlayerName} has requested to teleport to you. Type "!tpaccept playerName" to accept.`);
-        await server.tellCommand(playerName, `Sent tpa request to ${actualTargetName}.`);
+        await server.tellCommand(targetPlayer.playerName, `${playerData.realName} has requested to teleport to you. Type "!tpaccept playerName" to accept.`);
+        await server.tellCommand(playerName, `Sent tpa request to ${targetPlayer.realName}.`);
 
-        // Save tpa request to DataStore
-        await this.ds.saveTpaRequest(actualPlayerName, actualTargetName, 120000);
+        // Save tpa request to playerData
+        playerData.setOutgoingTpaRequest(targetPlayer.playerName, 120000);
+        targetPlayer.setIncomingTpaRequest(playerName, 120000);
     }
 
     // tpaccept command
     async tpacceptCommand(server: BedrockServer, playerName: string, cmd: string[]): Promise<void> {
         // Check if command access is enabled
-        if (await this.ds.getCommandAccessStatus() === false) return;
+        const playerData: SFIPlayerData = this.playerDataMap[playerName];
+        if (playerData && playerData.commandAccess === false) return;
 
         if (cmd.length < 2) {
             await server.tellCommand(playerName, "Usage: !tpaccept playerName");
@@ -116,31 +137,43 @@ export class SFIMCCamp extends Plugin {
         }
 
         // Get names from DataStore
-        const actualTargetName = cmd[1];
-        const targetName = await this.ds.mapNameToPlayer(actualTargetName) || actualTargetName;
-        const actualPlayerName = await this.ds.mapPlayerToName(playerName);
+        const realTargetName: string = cmd[1];
+        let targetPlayer: SFIPlayerData = null;
 
-        if (!actualPlayerName) {
+        for (const target of Object.values(this.playerDataMap)) {
+            if (target.realName === realTargetName) {
+                targetPlayer = target;
+                break;
+            }
+        }
+
+        if (!targetPlayer) {
+            await server.tellCommand(playerName, `${realTargetName} is not a valid player.`);
+            return;
+        }
+
+        if (!playerData.realName || playerData.realName === "") {
             await server.tellCommand(playerName, 'You must set your name with "!name yourName" before using this command.');
             return;
         }
 
-        // Check if target has an active tpa request
-        if (!await this.ds.hasTpaRequest(targetName)) {
-            await server.tellCommand(playerName, `${actualTargetName} does not have an active tpa request.`);
+        // Check if target incoming tpa request is from player
+        if (!targetPlayer.hasActiveIncomingTpaRequest() || targetPlayer.incomingTpaRequest !== playerName) {
+            await server.tellCommand(playerName, `You don't have an active tpa request from ${targetPlayer.realName}.`);
             return;
         }
 
         // Teleport player to target
-        await server.teleportPlayerToPlayerCommand(playerName, targetName);
-        await server.tellCommand(playerName, `Teleported to ${actualTargetName}.`);
-        await server.tellCommand(targetName, `${actualPlayerName} has teleported to you.`);
+        await server.teleportPlayerToPlayerCommand(playerName, targetPlayer.playerName);
+        await server.tellCommand(playerName, `Teleported to ${targetPlayer.realName}.`);
+        await server.tellCommand(targetPlayer.playerName, `${playerData.realName} has teleported to you.`);
     }
 
     // tpdeny command
     async tpdenyCommand(server: BedrockServer, playerName: string, cmd: string[]): Promise<void> {
         // Check if command access is enabled
-        if (await this.ds.getCommandAccessStatus() === false) return;
+        const playerData: SFIPlayerData = this.playerDataMap[playerName];
+        if (playerData && playerData.commandAccess === false) return;
 
         if (cmd.length < 2) {
             await server.tellCommand(playerName, "Usage: !tpdeny playerName");
@@ -148,31 +181,46 @@ export class SFIMCCamp extends Plugin {
         }
 
         // Get names from DataStore
-        const actualTargetName = cmd[1];
-        const targetName = await this.ds.mapNameToPlayer(actualTargetName) || actualTargetName;
-        const actualPlayerName = await this.ds.mapPlayerToName(playerName);
+        const realTargetName: string = cmd[1];
+        let targetPlayer: SFIPlayerData = null;
 
-        if (!actualPlayerName) {
+        for (const target of Object.values(this.playerDataMap)) {
+            if (target.realName === realTargetName) {
+                targetPlayer = target;
+                break;
+            }
+        }
+
+        if (!targetPlayer) {
+            await server.tellCommand(playerName, `${realTargetName} is not a valid player.`);
+            return;
+        }
+
+        if (!playerData.realName || playerData.realName === "") {
             await server.tellCommand(playerName, 'You must set your name with "!name yourName" before using this command.');
             return;
         }
 
-        // Check if target has an active tpa request
-        if (!await this.ds.hasTpaRequest(targetName)) {
-            await server.tellCommand(playerName, `${actualTargetName} does not have an active tpa request.`);
+        // Check if target incoming tpa request is from player
+        if (!targetPlayer.hasActiveIncomingTpaRequest() || targetPlayer.incomingTpaRequest !== playerName) {
+            await server.tellCommand(playerName, `You don't have an active tpa request from ${targetPlayer.realName}.`);
             return;
         }
 
-        // Remove tpa request from DataStore
-        await this.ds.cancelTpaRequest(targetName);
-        await server.tellCommand(playerName, `Denied tpa request from ${actualTargetName}.`);
-        await server.tellCommand(targetName, `${actualPlayerName} denied your tpa request.`);
+        // Remove tpa request from playerData
+        playerData.outgoingTpaRequest = "";
+        targetPlayer.incomingTpaRequest = "";
+
+        // Notify players
+        await server.tellCommand(playerName, `Denied tpa request from ${targetPlayer.realName}.`);
+        await server.tellCommand(targetPlayer.playerName, `${playerData.realName} denied your tpa request.`);
     }
 
     // tpcancel command
     async tpcancelCommand(server: BedrockServer, playerName: string, cmd: string[]): Promise<void> {
         // Check if command access is enabled
-        if (await this.ds.getCommandAccessStatus() === false) return;
+        const playerData: SFIPlayerData = this.playerDataMap[playerName];
+        if (playerData && playerData.commandAccess === false) return;
 
         if (cmd.length < 2) {
             await server.tellCommand(playerName, "Usage: !tpcancel playerName");
@@ -180,30 +228,47 @@ export class SFIMCCamp extends Plugin {
         }
 
         // Get names from DataStore
-        const actualTargetName = cmd[1];
-        const actualPlayerName = await this.ds.mapPlayerToName(playerName);
+        const realTargetName: string = cmd[1];
+        let targetPlayer: SFIPlayerData = null;
 
-        if (!actualPlayerName) {
+        for (const target of Object.values(this.playerDataMap)) {
+            if (target.realName === realTargetName) {
+                targetPlayer = target;
+                break;
+            }
+        }
+
+        if (!targetPlayer) {
+            await server.tellCommand(playerName, `${realTargetName} is not a valid player.`);
+            return;
+        }
+
+        if (!playerData.realName || playerData.realName === "") {
             await server.tellCommand(playerName, 'You must set your name with "!name yourName" before using this command.');
             return;
         }
 
-        // Check if target has an active tpa request
-        if (!await this.ds.hasTpaRequest(actualPlayerName)) {
-            await server.tellCommand(playerName, "You do not have an active tpa request.");
+        // Check if target incoming tpa request is from player
+        if (!targetPlayer.hasActiveIncomingTpaRequest() || targetPlayer.incomingTpaRequest !== playerName) {
+            await server.tellCommand(playerName, `You don't have an active tpa request tp ${targetPlayer.realName}.`);
             return;
         }
 
-        // Remove tpa request from DataStore
-        await this.ds.cancelTpaRequest(actualPlayerName);
-        await server.tellCommand(playerName, `Cancelled tpa request to ${actualTargetName}.`);
+        // Remove tpa request from playerData
+        playerData.outgoingTpaRequest = "";
+        targetPlayer.incomingTpaRequest = "";
+
+        // Notify players
+        await server.tellCommand(playerName, `Cancelled tpa request to ${targetPlayer.realName}.`);
+        await server.tellCommand(targetPlayer.playerName, `${playerData.realName} cancelled their tpa request.`);
     }
 
     // TODO: individual camper perms -- maybe a gmc/gms shortcut also?
     // gamemode command
     async gamemodeCommand(server: BedrockServer, playerName: string, cmd: string[]): Promise<void> {
-        // Check if the user has permission to use this command
-        if (await this.ds.getCommandAccessStatus() === false) return;
+        // Check if command access is enabled
+        const playerData: SFIPlayerData = this.playerDataMap[playerName];
+        if (playerData && playerData.commandAccess === false) return;
 
         if (cmd.length < 2) {
             await server.tellCommand(playerName, "Usage: !gamemode gamemode");
@@ -211,7 +276,7 @@ export class SFIMCCamp extends Plugin {
         }
 
         // Get player name from DataStore
-        const actualPlayerName = await this.ds.mapPlayerToName(playerName);
+        const actualPlayerName: string = playerData.realName;
         if (!actualPlayerName) {
             await server.tellCommand(playerName, 'You must set your name with "!name yourName" before using this command.');
             return;
@@ -235,23 +300,33 @@ export class SFIMCCamp extends Plugin {
 
     // n command
     async nameUserQueueCommand(server: BedrockServer, playerName: string, cmd: string[]): Promise<void> {
-        // Check if the user has permission to use this command
-        if (await this.ds.isInstructor(playerName) === false) return;
+        // Check if the player is an instructor
+        const playerData: SFIPlayerData = this.playerDataMap[playerName];
+        if (!playerData || playerData.commandAccess === false) return;
 
         let playerToBeNamed;
         if (cmd.length < 2) {
             // Get name from DataStore
-            playerToBeNamed = await this.ds.getNextPlayerToBeNamed()
+            playerToBeNamed = await this.ds.getNextPlayerNameQueue()
         } else {
             // Get name from command
-            const actualPlayerName = cmd[1];
+            const realTargetName = cmd[1];
+            let targetPlayer: SFIPlayerData = null;
+
+            for (const target of Object.values(this.playerDataMap)) {
+                if (target.realName === realTargetName) {
+                    targetPlayer = target;
+                    break;
+                }
+            }
+
             playerToBeNamed = {
-                playerName: await this.ds.mapNameToPlayer(actualPlayerName),
-                name: actualPlayerName
+                playerName: targetPlayer.playerName,
+                realName: realTargetName
             }
 
             if (!playerToBeNamed.playerName) {
-                await server.tellCommand(playerName, `${actualPlayerName} is not in the system.`);
+                await server.tellCommand(playerName, `${realTargetName} is not in the system.`);
                 return;
             }
         }
@@ -265,7 +340,7 @@ export class SFIMCCamp extends Plugin {
         await server.sendCommand(`tp ${playerName} ${playerToBeNamed.playerName}`);
 
         // Get the location of the nametag chest
-        const chestLocation = await this.ds.getNameChestLocation(playerToBeNamed.name);
+        const chestLocation = await this.ds.getChestLocation(playerToBeNamed.realName);
 
         // Clone the chest to the player's location
         await server.sendCommand(`execute "${playerName}" ~ ~ ~ clone ${chestLocation.x} ${chestLocation.y} ${chestLocation.z} ${chestLocation.x} ${chestLocation.y} ${chestLocation.z} ~ ~ ~`);
@@ -288,7 +363,7 @@ export class SFIMCCamp extends Plugin {
         await server.gamemodeCommand("survival", playerToBeNamed.playerName);
 
         // Remove player from queue
-        await this.ds.removePlayerToBeNamed(playerToBeNamed.playerName);
+        await this.ds.removePlayerNameQueue(playerToBeNamed.playerName);
     }
 
     // setnamechest command
@@ -308,7 +383,7 @@ export class SFIMCCamp extends Plugin {
         const z = parseInt(cmd[4]);
 
         // Set the location of the chest in the DataStore
-        await this.ds.setNameChestLocation(name, { x, y, z });
+        await this.ds.setChestLocation(name, { x, y, z });
 
         // Send confirmation message
         await server.tellCommand(playerName, `Set the location of the nametag chest for ${name} to ${x} ${y} ${z}.`);
@@ -328,7 +403,7 @@ export class SFIMCCamp extends Plugin {
         const access = cmd[1].toLowerCase() === "true";
 
         // Set the access boolean in the DataStore
-        await this.ds.setCommandAccess(access);
+        await this.setCommandAccess(playerName, access);
 
         // Send confirmation message
         await server.tellCommand(playerName, `Set command access to ${access}.`);
@@ -359,7 +434,7 @@ export class SFIMCCamp extends Plugin {
         await server.sendCommand(`title ${name} title Please set your name\nusing: !name yourName`);
     }
 
-    // general functions
+    // -------------------------------------- General Functions --------------------------------------
 
     // broadcast message to all instructors
     async broadcastToInstructors(server: BedrockServer, message: string): Promise<void> {
@@ -372,6 +447,19 @@ export class SFIMCCamp extends Plugin {
 
         for (const instructor of instructorList) {
             await server.tellCommand(instructor, message);
+        }
+    }
+
+    // Set command access
+    async setCommandAccess(playerName: string, access: boolean): Promise<void> {
+        this.playerDataMap[playerName].commandAccess = access;
+    }
+
+    // Set all command access
+    async setAllCommandAccess(access: boolean): Promise<void> {
+        const players = Object.keys(this.playerDataMap);
+        for (const player of players) {
+            await this.setCommandAccess(player, access);
         }
     }
 
@@ -393,7 +481,7 @@ export class SFIMCCamp extends Plugin {
         }
     }
 
-    // Event handlers
+    // -------------------------------------- Event Handlers --------------------------------------
 
     // Handle PlayerMessage
     async handlePlayerMessage(event: PlayerMessageEvent) {
@@ -513,16 +601,16 @@ export class SFIMCCamp extends Plugin {
         //
 
         // Save player location to DataStore
-        await this.ds.savePlayerLocation(player);
+        this.playerDataMap[playerName].logoutLocation = {
+            dimension: player.dimension,
+            position: player.position,
+        };
 
         // Remove playerName from DataStore
-        await this.ds.removePlayerName(playerName);
-
-        // Remove player from tpa requests
-        await this.ds.cancelTpaRequest(playerName);
+        await this.ds.setPlayerData(player.id, <SFIPlayerData>this.playerDataMap[playerName].logoutToJSON(player));
 
         // Remove player from toBeNamed
-        await this.ds.removePlayerToBeNamed(playerName);
+        await this.ds.removePlayerNameQueue(playerName);
     }
 
     // Start

@@ -6,24 +6,213 @@ import { Player } from "../../minecraft-be-websocket-api/lib/events/Events.js";
 
 
 // Interfaces
-interface playerLocation {
-    dimension: number;
-    position: {
-        x: number;
-        y: number;
-        z: number;
-    };
-}
-
-interface nameData {
-    playerName: string;
-    name: string;
-}
-
-interface locationData {
+interface positionData {
     x: number;
     y: number;
     z: number;
+}
+
+interface locationData {
+    dimension: number;
+    position: positionData;
+}
+
+interface nameData {
+    realName: string;
+    playerName: string;
+}
+
+export class SFIPlayerData {
+    // Properties
+    public id: number;
+    public realName: string;
+    public playerName: string;
+    public logoutLocation: locationData;
+    public isInstructor: boolean;
+    public isNamed: boolean;
+    public commandAccess: boolean;
+    public outgoingTpaRequest: string;
+    public incomingTpaRequest: string;
+    public outgoingTpHereRequest: string;
+    public incomingTpHereRequest: string;
+
+    // Constructor
+    constructor(playerData: SFIPlayerData) {
+        this.id = playerData.id;
+        this.realName = playerData.realName;
+        this.playerName = playerData.playerName;
+        this.logoutLocation = playerData.logoutLocation;
+        this.isInstructor = playerData.isInstructor;
+        this.isNamed = playerData.isNamed;
+        this.commandAccess = playerData.commandAccess;
+        this.outgoingTpaRequest = playerData.outgoingTpaRequest;
+        this.incomingTpaRequest = playerData.incomingTpaRequest;
+        this.outgoingTpHereRequest = playerData.outgoingTpHereRequest;
+        this.incomingTpHereRequest = playerData.incomingTpHereRequest;
+    }
+
+    // Methods
+    toJSON(): object {
+        return {
+            id: this.id,
+            realName: this.realName,
+            playerName: this.playerName,
+            logoutLocation: this.logoutLocation,
+            isInstructor: this.isInstructor,
+            isNamed: this.isNamed,
+            commandAccess: this.commandAccess,
+            outgoingTpaRequest: this.outgoingTpaRequest,
+            incomingTpaRequest: this.incomingTpaRequest,
+            outgoingTpHereRequest: this.outgoingTpHereRequest,
+            incomingTpHereRequest: this.incomingTpHereRequest
+        };
+    }
+
+    // From JSON
+    static fromJSON(json: object): SFIPlayerData {
+        return new SFIPlayerData(<SFIPlayerData>json);
+    }
+
+    // New player
+    static newPlayer(player: Player, isInstructor: boolean): SFIPlayerData {
+        return new SFIPlayerData(<SFIPlayerData>{
+            id: player.id,
+            realName: "",
+            playerName: player.name,
+            logoutLocation: <locationData>{
+                dimension: player.dimension,
+                position: <positionData>{
+                    x: player.position.x,
+                    y: player.position.y,
+                    z: player.position.z
+                }
+            },
+            isInstructor: isInstructor,
+            isNamed: false,
+            commandAccess: false,
+            outgoingTpaRequest: "",
+            incomingTpaRequest: "",
+            outgoingTpHereRequest: "",
+            incomingTpHereRequest: ""
+        });
+    }
+
+    // Logout to JSON
+    logoutToJSON(player: Player): object {
+        return {
+            id: player.id,
+            realName: this.realName,
+            playerName: "",
+            logoutLocation: {
+                dimension: player.dimension,
+                position: {
+                    x: player.position.x,
+                    y: player.position.y,
+                    z: player.position.z
+                }
+            },
+            isInstructor: false,
+            isNamed: false,
+            commandAccess: false,
+            outgoingTpaRequest: "",
+            incomingTpaRequest: "",
+            outgoingTpHereRequest: "",
+            incomingTpHereRequest: ""
+        };
+    }
+
+    // Login from JSON
+    static loginFromJSON(json: object, player: Player, isInstructor: boolean): SFIPlayerData {
+        if (json["id"] == player.id) {
+            return new SFIPlayerData(<SFIPlayerData>{
+                id: player.id,
+                realName: json["realName"],
+                playerName: player.name,
+                logoutLocation: <locationData>json["logoutLocation"],
+                isInstructor: isInstructor,
+                isNamed: false,
+                commandAccess: false,
+                outgoingTpaRequest: "",
+                incomingTpaRequest: "",
+                outgoingTpHereRequest: "",
+                incomingTpHereRequest: ""
+            });
+        }
+    }
+
+    // Set real name
+    setRealName(realName: string): void {
+        this.realName = realName;
+    }
+
+    // Set named
+    setNamed(isNamed: boolean): void {
+        this.isNamed = isNamed;
+    }
+
+    // Set outgoing tpa request
+    setOutgoingTpaRequest(outgoingTpaRequest: string, timeout: number): void {
+        this.outgoingTpaRequest = outgoingTpaRequest;
+
+        // Set expiration timer
+        setTimeout(() => {
+            this.outgoingTpaRequest = "";
+        }, timeout);
+    }
+
+    // Has active outgoing tpa request
+    hasActiveOutgoingTpaRequest(): boolean {
+        if (!this.outgoingTpaRequest) this.outgoingTpaRequest = "";
+        return this.outgoingTpaRequest != "";
+    }
+
+    // Set incoming tpa request
+    setIncomingTpaRequest(incomingTpaRequest: string, timeout: number): void {
+        this.incomingTpaRequest = incomingTpaRequest;
+
+        // Set expiration timer
+        setTimeout(() => {
+            this.incomingTpaRequest = "";
+        }, timeout);
+    }
+
+    // Has active incoming tpa request
+    hasActiveIncomingTpaRequest(): boolean {
+        if (!this.incomingTpaRequest) this.incomingTpaRequest = "";
+        return this.incomingTpaRequest != "";
+    }
+
+    // Set outgoing tp here request
+    setOutgoingTpHereRequest(outgoingTpHereRequest: string, timeout: number): void {
+        this.outgoingTpHereRequest = outgoingTpHereRequest;
+
+        // Set expiration timer
+        setTimeout(() => {
+            this.outgoingTpHereRequest = "";
+        }, timeout);
+    }
+
+    // Has active outgoing tp here request
+    hasActiveOutgoingTpHereRequest(): boolean {
+        if (!this.outgoingTpHereRequest) this.outgoingTpHereRequest = "";
+        return this.outgoingTpHereRequest != "";
+    }
+
+    // Set incoming tp here request
+    setIncomingTpHereRequest(incomingTpHereRequest: string, timeout: number): void {
+        this.incomingTpHereRequest = incomingTpHereRequest;
+
+        // Set expiration timer
+        setTimeout(() => {
+            this.incomingTpHereRequest = "";
+        }, timeout);
+    }
+
+    // Has active incoming tp here request
+    hasActiveIncomingTpHereRequest(): boolean {
+        if (!this.incomingTpHereRequest) this.incomingTpHereRequest = "";
+        return this.incomingTpHereRequest != "";
+    }
 }
 
 export class SFIDataStore extends DataStore {
@@ -34,73 +223,112 @@ export class SFIDataStore extends DataStore {
 
     // Methods
 
-    // Add playerName to DataStore
-    async addPlayerName(playerName: string, name: string): Promise<void> {
-        const nameData = await this.getData("PlayerNames");
+    // ----------------------------- Player Data -----------------------------
 
-        nameData[playerName] = name;
-        await this.setData("PlayerNames", nameData);
+    // Get player data from DataStore
+    async getPlayerData(playerId: number): Promise<SFIPlayerData> {
+        const playerData = await this.getData("PlayerData");
+        const stringId = playerId.toString();
+        return playerData[stringId];
+    }
+
+    // Set player data in DataStore
+    async setPlayerData(playerId: number, playerData: SFIPlayerData): Promise<void> {
+        const data = await this.getData("PlayerData");
+        const stringId = playerId.toString();
+        data[stringId] = playerData;
+        await this.setData("PlayerData", data);
         await this.saveData();
     }
 
-    // Remove playerName from DataStore
-    async removePlayerName(playerName: string): Promise<void> {
-        const nameData = await this.getData("PlayerNames");
-
-        if (nameData[playerName]) delete nameData[playerName];
-        await this.setData("PlayerNames", nameData);
+    // Remove player data from DataStore
+    async removePlayerData(playerId: number): Promise<void> {
+        const data = await this.getData("PlayerData");
+        const stringId = playerId.toString();
+        if (data[stringId]) delete data[stringId];
+        await this.setData("PlayerData", data);
         await this.saveData();
     }
 
-    // Get player to be named
-    async getNextPlayerToBeNamed(): Promise<nameData> {
-        const nameData = await this.getData("PlayersToBeNamed");
+    // ----------------------------- Chest Locations -----------------------------
 
-        for (const player in nameData) {
-            if (nameData[player]) return { playerName: player, name: nameData[player] };
+    // Get chest location from DataStore
+    async getChestLocation(realName: string): Promise<positionData> {
+        const chestData = await this.getData("ChestLocations");
+        return chestData[realName];
+    }
+
+    // Set chest location in DataStore
+    async setChestLocation(realName: string, chestLocation: positionData): Promise<void> {
+        const data = await this.getData("ChestLocations");
+        data[realName] = chestLocation;
+        await this.setData("ChestLocations", data);
+        await this.saveData();
+    }
+
+    // Remove chest location from DataStore
+    async removeChestLocation(realName: string): Promise<void> {
+        const data = await this.getData("ChestLocations");
+        if (data[realName]) delete data[realName];
+        await this.setData("ChestLocations", data);
+        await this.saveData();
+    }
+
+    // ----------------------------- Player Name Queue -----------------------------
+
+    // Get player name queue from DataStore
+    async getPlayerNameQueue(): Promise<nameData[]> {
+        const nameData = await this.getData("PlayerNameQueue");
+        return nameData;
+    }
+
+    // Get next player from queue
+    async getNextPlayerNameQueue(): Promise<nameData> {
+        const nameData = await this.getData("PlayerNameQueue");
+        return nameData[0];
+    }
+
+    // Add player to queue
+    async addPlayerNameQueue(playerName: string, realName: string): Promise<void> {
+        const nameData = await this.getData("PlayerNameQueue");
+        nameData.push(<nameData>{ playerName, realName });
+        await this.setData("PlayerNameQueue", nameData);
+        await this.saveData();
+    }
+
+    // Remove player from queue
+    async removePlayerNameQueue(playerName: string): Promise<void> {
+        const nameData: nameData[] = await this.getData("PlayerNameQueue");
+
+        // Check if player is in queue
+        for (let i = 0; i < nameData.length; i++) {
+            if (nameData[i].playerName == playerName) {
+                nameData.splice(i, 1);
+                break;
+            }
         }
-    }
 
-    // Add player to be named
-    async addPlayerToBeNamed(playerName: string, name: string): Promise<void> {
-        const nameData = await this.getData("PlayersToBeNamed");
-
-        nameData[playerName] = name;
-        await this.setData("PlayersToBeNamed", nameData);
+        await this.setData("PlayerNameQueue", nameData);
         await this.saveData();
     }
 
-    // Remove player from being named
-    async removePlayerToBeNamed(playerName: string): Promise<void> {
-        const nameData = await this.getData("PlayersToBeNamed");
+    // ----------------------------- Instructors -----------------------------
 
-        if (nameData[playerName]) delete nameData[playerName];
-
-        await this.setData("PlayersToBeNamed", nameData);
-        await this.saveData();
-    }
-
-    // Get Name Chest location
-    async getNameChestLocation(playerName: string): Promise<locationData> {
-        const chestData = await this.getData("NameChestLocations");
-
-        return chestData[playerName];
-    }
-
-    // Set Name Chest location
-    async setNameChestLocation(name: string, location: locationData) {
-        const chestData = await this.getData("NameChestLocations");
-
-        chestData[name] = location;
-        await this.setData("NameChestLocations", chestData);
-        await this.saveData();
+    // Get instructor data from DataStore
+    async getInstructorData(): Promise<string[]> {
+        const instructorData = await this.getData("Instructors");
+        return instructorData;
     }
 
     // Add instructor to DataStore
     async addInstructor(playerName: string): Promise<void> {
         const instructorData = await this.getData("Instructors");
 
-        instructorData[playerName] = true;
+        // Check if instructor is already in DataStore
+        if (!instructorData.includes(playerName)) {
+            instructorData.push(playerName);
+        }
+
         await this.setData("Instructors", instructorData);
         await this.saveData();
     }
@@ -109,138 +337,29 @@ export class SFIDataStore extends DataStore {
     async removeInstructor(playerName: string): Promise<void> {
         const instructorData = await this.getData("Instructors");
 
-        if (instructorData[playerName]) delete instructorData[playerName];
+        // Check if instructor is in DataStore
+        if (instructorData.includes(playerName)) {
+            const index = instructorData.indexOf(playerName);
+            instructorData.splice(index, 1);
+        }
+
         await this.setData("Instructors", instructorData);
         await this.saveData();
     }
 
-    // Is player an instructor?
+    // Check if player is an instructor
     async isInstructor(playerName: string): Promise<boolean> {
         const instructorData = await this.getData("Instructors");
-
-        return instructorData[playerName] || false;
+        return instructorData.includes(playerName);
     }
 
     // Get all instructors
     async getInstructors(): Promise<string[]> {
         const instructorData = await this.getData("Instructors");
-
-        for (const instructor of instructorData) {
-            if (!instructorData[instructor]) delete instructorData[instructor];
-        }
-
-        return Object.keys(instructorData);
+        return instructorData;
     }
 
-    // Map player name to actual name
-    async mapPlayerToName(playerName: string): Promise<string> {
-        const nameData = await this.getData("PlayerNames");
-
-        return nameData[playerName];
-    }
-
-    // Map actual name to player name
-    async mapNameToPlayer(playerName: string): Promise<string> {
-        const nameData = await this.getData("PlayerNames");
-
-        for (const name in nameData) {
-            if (nameData[name] === playerName) return name;
-        }
-    }
-
-    // Get player location from DataStore
-    async getPlayerLocation(playerName: string): Promise<playerLocation> {
-        // Get player's actual name
-        const mappedName = await this.mapPlayerToName(playerName);
-        if (!mappedName) return;
-
-        // Get player location
-        const locationData = await this.getData("PlayerLocations");
-
-        return locationData[mappedName];
-    }
-
-    // Save player location to DataStore
-    async savePlayerLocation(player: Player): Promise<void> {
-        // Get player's actual name
-        const mappedName = await this.mapPlayerToName(player.name);
-        if (!mappedName) return;
-
-        // Save player location
-        const locationData = await this.getData("PlayerLocations");
-
-        locationData[mappedName] = <playerLocation>{
-            dimension: player.dimension,
-            position: player.position
-        };
-
-        await this.setData("PlayerLocations", locationData);
-        await this.saveData();
-    }
-
-    // Delete player location from DataStore
-    async deletePlayerLocation(playerName: string): Promise<void> {
-        // Get player's actual name
-        const mappedName = await this.mapPlayerToName(playerName);
-        if (!mappedName) return;
-
-        // Delete player location
-        const locationData = await this.getData("PlayerLocations");
-
-        if (locationData[mappedName]) delete locationData[mappedName];
-
-        await this.setData("PlayerLocations", locationData);
-        await this.saveData();
-    }
-
-    // Save tpa request to DataStore
-    async saveTpaRequest(playerName: string, targetName: string, timeout: number): Promise<void> {
-        const tpaData = await this.getData("TpaRequests");
-
-        tpaData[playerName] = {
-            target: targetName,
-            timeout: timeout
-        };
-
-        // Callback to delete tpa request after timeout
-        setTimeout(async () => {
-            await this.cancelTpaRequest(playerName);
-        }, timeout);
-
-        await this.setData("TpaRequests", tpaData);
-        await this.saveData();
-    }
-
-    // Delete tpa request from DataStore
-    async cancelTpaRequest(playerName: string): Promise<void> {
-        const tpaData = await this.getData("TpaRequests");
-
-        if (tpaData[playerName]) delete tpaData[playerName];
-
-        await this.setData("TpaRequests", tpaData);
-        await this.saveData();
-    }
-
-    // Check if player has an active tpa request
-    async hasTpaRequest(playerName: string): Promise<boolean> {
-        const tpaData = await this.getData("TpaRequests");
-
-        return tpaData[playerName] ? true : false;
-    }
-
-    // Set command access
-    async setCommandAccess(enabled: boolean): Promise<void> {
-        const commandAccessData = await this.getData("CommandAccess");
-
-        commandAccessData.enabled = enabled;
-    }
-
-    // Get command access status
-    async getCommandAccessStatus(): Promise<boolean> {
-        const commandAccessData = await this.getData("CommandAccess");
-
-        return commandAccessData.enabled;
-    }
+    // -------------------------------- Campers --------------------------------
 
     // Add camper to DataStore
     async addCamper(playerName: string): Promise<void> {
