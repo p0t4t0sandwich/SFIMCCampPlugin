@@ -33,8 +33,6 @@ export class SFIPlayerData {
     public commandAccess: boolean;
     public outgoingTpaRequest: string;
     public incomingTpaRequest: string;
-    public outgoingTpHereRequest: string;
-    public incomingTpHereRequest: string;
 
     // Constructor
     constructor(playerData: SFIPlayerData) {
@@ -47,8 +45,6 @@ export class SFIPlayerData {
         this.commandAccess = playerData.commandAccess;
         this.outgoingTpaRequest = playerData.outgoingTpaRequest;
         this.incomingTpaRequest = playerData.incomingTpaRequest;
-        this.outgoingTpHereRequest = playerData.outgoingTpHereRequest;
-        this.incomingTpHereRequest = playerData.incomingTpHereRequest;
     }
 
     // Methods
@@ -62,9 +58,7 @@ export class SFIPlayerData {
             isNamed: this.isNamed,
             commandAccess: this.commandAccess,
             outgoingTpaRequest: this.outgoingTpaRequest,
-            incomingTpaRequest: this.incomingTpaRequest,
-            outgoingTpHereRequest: this.outgoingTpHereRequest,
-            incomingTpHereRequest: this.incomingTpHereRequest
+            incomingTpaRequest: this.incomingTpaRequest
         };
     }
 
@@ -91,9 +85,7 @@ export class SFIPlayerData {
             isNamed: false,
             commandAccess: false,
             outgoingTpaRequest: "",
-            incomingTpaRequest: "",
-            outgoingTpHereRequest: "",
-            incomingTpHereRequest: ""
+            incomingTpaRequest: ""
         });
     }
 
@@ -133,9 +125,7 @@ export class SFIPlayerData {
                 isNamed: false,
                 commandAccess: false,
                 outgoingTpaRequest: "",
-                incomingTpaRequest: "",
-                outgoingTpHereRequest: "",
-                incomingTpHereRequest: ""
+                incomingTpaRequest: ""
             });
         }
     }
@@ -180,38 +170,6 @@ export class SFIPlayerData {
     hasActiveIncomingTpaRequest(): boolean {
         if (!this.incomingTpaRequest) this.incomingTpaRequest = "";
         return this.incomingTpaRequest != "";
-    }
-
-    // Set outgoing tp here request
-    setOutgoingTpHereRequest(outgoingTpHereRequest: string, timeout: number): void {
-        this.outgoingTpHereRequest = outgoingTpHereRequest;
-
-        // Set expiration timer
-        setTimeout(() => {
-            this.outgoingTpHereRequest = "";
-        }, timeout);
-    }
-
-    // Has active outgoing tp here request
-    hasActiveOutgoingTpHereRequest(): boolean {
-        if (!this.outgoingTpHereRequest) this.outgoingTpHereRequest = "";
-        return this.outgoingTpHereRequest != "";
-    }
-
-    // Set incoming tp here request
-    setIncomingTpHereRequest(incomingTpHereRequest: string, timeout: number): void {
-        this.incomingTpHereRequest = incomingTpHereRequest;
-
-        // Set expiration timer
-        setTimeout(() => {
-            this.incomingTpHereRequest = "";
-        }, timeout);
-    }
-
-    // Has active incoming tp here request
-    hasActiveIncomingTpHereRequest(): boolean {
-        if (!this.incomingTpHereRequest) this.incomingTpHereRequest = "";
-        return this.incomingTpHereRequest != "";
     }
 }
 

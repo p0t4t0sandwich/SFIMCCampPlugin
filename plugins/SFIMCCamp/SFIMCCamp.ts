@@ -5,7 +5,7 @@
 import { BedrockServer } from "../../minecraft-be-websocket-api/lib/BedrockServer.js";
 import { MinecraftWebSocket } from "../../minecraft-be-websocket-api/lib/MinecraftWebSocket.js";
 import { Plugin } from "../../minecraft-be-websocket-api/lib/Plugin.js";
-import { EventName, Player, PlayerJoinEvent, PlayerLeaveEvent, PlayerMessageEvent } from "../../minecraft-be-websocket-api/lib/events/Events.js";
+import { EventName, Player, PlayerJoinEvent, PlayerLeaveEvent, PlayerMessageEvent, PlayerTransformEvent } from "../../minecraft-be-websocket-api/lib/events/Events.js";
 import { SFIDataStore, SFIPlayerData } from './SFIDataStore.js';
 import { SFIRestAPI } from './SFIRestAPI.js';
 
@@ -40,7 +40,8 @@ export class SFIMCCamp extends Plugin {
         this.setListeners([
             { eventName: EventName.PlayerMessage, callback: this.handlePlayerMessage.bind(this) },
             { eventName: EventName.PlayerJoin, callback: this.handlePlayerJoin.bind(this) },
-            { eventName: EventName.PlayerLeave, callback: this.handlePlayerLeave.bind(this) }
+            { eventName: EventName.PlayerLeave, callback: this.handlePlayerLeave.bind(this) },
+            { eventName: EventName.PlayerTransform, callback: this.handlePlayerTransform.bind(this) }
         ]);
     }
 
@@ -216,6 +217,53 @@ export class SFIMCCamp extends Plugin {
         await server.tellCommand(targetPlayer.playerName, `${playerData.realName} denied your tpa request.`);
     }
 
+    // tphere command
+    async tphereCommand(server: BedrockServer, playerName: string, cmd: string[]): Promise<void> {
+        // Check if command access is enabled
+        const playerData: SFIPlayerData = this.playerDataMap[playerName];
+        if (playerData && playerData.commandAccess === false) return;
+
+        if (cmd.length < 2) {
+            await server.tellCommand(playerName, "Usage: !tphere playerName");
+            return;
+        }
+
+        // Get names from DataStore
+        const realTargetName: string = cmd[1];
+        let targetPlayer: SFIPlayerData = null;
+
+        for (const target of Object.values(this.playerDataMap)) {
+            if (target.realName === realTargetName) {
+                targetPlayer = target;
+                break;
+            }
+        }
+
+        if (!targetPlayer) {
+            await server.tellCommand(playerName, `${realTargetName} is not a valid player.`);
+            return;
+        }
+
+        if (!playerData.realName || playerData.realName === "") {
+            await server.tellCommand(playerName, 'You must set your name with "!name yourName" before using this command.');
+            return;
+        }
+
+        // Check if target or player has an active tpa request
+        if (targetPlayer.hasActiveIncomingTpaRequest() || playerData.hasActiveOutgoingTpaRequest()) {
+            await server.tellCommand(playerName, `You or ${targetPlayer.realName} already have an active tpa request.`);
+            return;
+        }
+
+        // Set up incoming tpa request
+        targetPlayer.setIncomingTpaRequest(playerName, 120000);
+        playerData.setOutgoingTpaRequest(targetPlayer.playerName, 120000);
+
+        // Notify players
+        await server.tellCommand(playerName, `Sent tphere request to ${targetPlayer.realName}.`);
+        await server.tellCommand(targetPlayer.playerName, `${playerData.realName} has requested that you teleport to them.`);
+    }
+
     // tpcancel command
     async tpcancelCommand(server: BedrockServer, playerName: string, cmd: string[]): Promise<void> {
         // Check if command access is enabled
@@ -263,7 +311,6 @@ export class SFIMCCamp extends Plugin {
         await server.tellCommand(targetPlayer.playerName, `${playerData.realName} cancelled their tpa request.`);
     }
 
-    // TODO: individual camper perms -- maybe a gmc/gms shortcut also?
     // gamemode command
     async gamemodeCommand(server: BedrockServer, playerName: string, cmd: string[]): Promise<void> {
         // Check if command access is enabled
@@ -395,12 +442,45 @@ export class SFIMCCamp extends Plugin {
         if (await this.ds.isInstructor(playerName) === false) return;
 
         if (cmd.length < 2) {
-            await server.tellCommand(playerName, "Usage: !commandaccess true/false");
+            await server.tellCommand(playerName, "Usage: !commandaccess camperName true/false");
+            return;
+        }
+
+        // Get the access boolean from the command
+        const targetRealName = cmd[1];
+        let targetPlayerName = cmd[1];
+        const access = cmd[2].toLowerCase() === "true";
+
+        // Get the player data from the DataStore
+        for (const player of Object.values(this.playerDataMap)) {
+            if (player.realName === targetRealName) {
+                targetPlayerName = player.playerName;
+                break;
+            }
+        }
+
+        // Set the access boolean in the DataStore
+        await this.setCommandAccess(targetPlayerName, access);
+
+        // Send confirmation message
+        await server.tellCommand(playerName, `Set command access for ${targetRealName} to ${access}.`);
+    }
+
+    // commandaccess command
+    async allCommandAccessCommand(server: BedrockServer, playerName: string, cmd: string[]): Promise<void> {
+        // Check if the user has permission to use this command
+        if (await this.ds.isInstructor(playerName) === false) return;
+
+        if (cmd.length < 2) {
+            await server.tellCommand(playerName, "Usage: !allcommandaccess true/false");
             return;
         }
 
         // Get the access boolean from the command
         const access = cmd[1].toLowerCase() === "true";
+
+        // Set the access boolean in the DataStore
+        this.setAllCommandAccess(access);
 
         // Set the access boolean in the DataStore
         await this.setCommandAccess(playerName, access);
@@ -521,7 +601,9 @@ export class SFIMCCamp extends Plugin {
                 await this.tpcancelCommand(server, playerName, cmd);
                 break;
 
-            // TODO: tpahere command
+            // tphere command
+            case "!tphere":
+                await this.tphereCommand(server, playerName, cmd);
 
             // gamemode command
             case "!gamemode":
@@ -553,6 +635,10 @@ export class SFIMCCamp extends Plugin {
                 await this.commandAccessCommand(server, playerName, cmd);
                 break;
 
+            // allcommandaccess command
+            case "!allcommandaccess":
+                await this.allCommandAccessCommand(server, playerName, cmd);
+
             // nametitle command
             case "!nametitle":
                 await this.nameTitleCommand(server, playerName, cmd);
@@ -570,10 +656,8 @@ export class SFIMCCamp extends Plugin {
         const playerName: string = event.getPlayer().name;
         const server: BedrockServer = this.mwss.getServer(event.getServer());
 
-        //
-        console.log("PlayerJoinEvent");
-        console.log(event.getPlayer());
-        //
+        // Add player to local cache
+        this.playerDataMap[playerName] = await this.ds.getPlayerData(event.getPlayer().id);
 
         // Sleep for 5 seconds
         await sleep(5000);
@@ -612,6 +696,38 @@ export class SFIMCCamp extends Plugin {
         // Remove player from toBeNamed
         await this.ds.removePlayerNameQueue(playerName);
     }
+
+    // Handle PlayerTransform
+    async handlePlayerTransform(event: PlayerTransformEvent): Promise<void> {
+        event = new PlayerTransformEvent(event);
+        const player: Player = event.getPlayer();
+        const playerId: number = player.id;
+        const playerName: string = player.name;
+
+        // Check if player is in local cache
+        if (!this.playerDataMap[playerName]) {
+            this.playerDataMap[playerName] = await this.ds.getPlayerData(playerId);
+            const server: BedrockServer = this.mwss.getServer(event.getServer());
+
+            // Sleep for 5 seconds
+            await sleep(5000);
+
+            // Set gamemode to adventure
+            await server.gamemodeCommand("adventure", playerName);
+
+            // Send message to player
+            await server.tellCommand(playerName, "Welcome back! To set your name, type !name yourName");
+
+            // Set title
+            await server.sendCommand(`title ${playerName} times 0 10000 0`);
+            await server.sendCommand(`title ${playerName} title Please set your name\nusing: !name yourName`);
+
+            // Return
+            return;
+        }
+    }
+
+    // -------------------------------------- Start --------------------------------------
 
     // Start
     async start(mwss: MinecraftWebSocket): Promise<void> {

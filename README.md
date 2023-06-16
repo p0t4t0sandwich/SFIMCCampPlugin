@@ -28,12 +28,14 @@ Plugin for managing the Sci-Fi Minecraft Camp using the Bedrock websocket API
 | `!tpaccept` | `!tpaccept playerName` | User accepts teleport request from other player | camper |
 | `!tpdeny` | `!tpdeny playerName` | User denies teleport request from other player | camper |
 | `!tpcancel` | `!tpcancel playerName` | User cancels an outgoing teleport request | camper |
+| `!tpahere` | `!tpahere playerName` | User sends a request to teleport the specified player to them | camper |
 | `!gamemode` | `!gamemode survival/creative` | Sets the gamemode of the camper | camper |
 | `!gmc` | `!gmc` | Sets the gamemode of the camper to creative | camper |
 | `!gms` | `!gms` | Sets the gamemode of the camper to survival | camper |
 | `!n` | `!n`/ `!n campersName` | Gives the camper's nametag and teleports user to the camper | instructor |
 | `!setnamechest` | `!setnamechest campersName x y z` | Sets the location of the chest with the camper's nametag (to be teleported to an instructor later with `!n`) | instructor |
 | `!commandaccess` | `!commandaccess true/false` | Enables/disables the camper commands | instructor |
+| `!allcommandaccess` | `!allcommandaccess true/false` | Enables/disables all camper commands | instructor |
 | `!nametitle` | `!nametitle MinecraftPlayerName` | Places the camper in adventure mode and instructs them to run the !name command. (used when the login system fails) | instructor |
 
 ## Setting Up the Camper Naming System
