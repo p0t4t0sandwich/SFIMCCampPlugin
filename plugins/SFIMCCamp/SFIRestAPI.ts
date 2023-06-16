@@ -90,6 +90,12 @@ export class SFIRestAPI {
                             method: "POST"
                         });
                     }
+
+                    function fiveMinuteWarning() {
+                        fetch("/fiveMinuteWarning", {
+                            method: "POST"
+                        });
+                    }
                 </script>
 
                 <body>
@@ -98,6 +104,9 @@ export class SFIRestAPI {
                     <p>Pause buttons:</p>
                     <button onclick="pauseServers()">Pause Servers</button>
                     <button onclick="unpauseServers()">Unpause Servers</button>
+
+                    <p>Five minute warning:</p>
+                    <button onclick="fiveMinuteWarning()">Five Minute Warning</button>
 
                     <iframe name="dummyframe" id="dummyframe" style="display: none;"></iframe>
 
@@ -278,6 +287,25 @@ export class SFIRestAPI {
             res.type("application/json")
                 .status(200)
                 .json({ "message": "Servers unpaused" });
+
+        // Serverside error response
+        } catch (err) {
+            console.log(err);
+            res.type("application/json")
+                .status(500)
+                .json({ "message": "Internal Server Error", "error": err });
+        }
+    }
+
+    // Five minute warning route
+    async fiveMinuteWarningRoute(req: Request, res: Response, next: Function): Promise<void> {
+        try {
+            // Send five minute warning
+            await this.sfiPlugin.fiveMinuteWarning();
+
+            res.type("application/json")
+                .status(200)
+                .json({ "message": "Five minute warning sent" });
 
         // Serverside error response
         } catch (err) {

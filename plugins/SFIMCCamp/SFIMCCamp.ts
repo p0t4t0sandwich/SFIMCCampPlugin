@@ -561,6 +561,16 @@ export class SFIMCCamp extends Plugin {
         }
     }
 
+    // Five minute warning
+    async fiveMinuteWarning(): Promise<void> {
+        const serversNames = this.mwss.getServerNames();
+        for (const serversName of serversNames) {
+            const server = this.mwss.getServer(serversName);
+            await server.sendCommand("title @a times 0 5 0");
+            await server.sendCommand("title @a title 5 minutes warning!");
+        }
+    }
+
     // -------------------------------------- Event Handlers --------------------------------------
 
     // Handle PlayerMessage
@@ -659,6 +669,14 @@ export class SFIMCCamp extends Plugin {
         // Add player to local cache
         this.playerDataMap[playerName] = await this.ds.getPlayerData(event.getPlayer().id);
 
+        // Check to see if the player is an instructor
+        if (this.ds.isInstructor(playerName)) {
+            this.playerDataMap[playerName].isInstructor = true;
+            this.playerDataMap[playerName].commandAccess = true;
+            this.playerDataMap[playerName].isNamed = true;
+            return;
+        }
+
         // Sleep for 5 seconds
         await sleep(5000);
 
@@ -707,6 +725,15 @@ export class SFIMCCamp extends Plugin {
         // Check if player is in local cache
         if (!this.playerDataMap[playerName]) {
             this.playerDataMap[playerName] = await this.ds.getPlayerData(playerId);
+
+            // Check to see if the player is an instructor
+            if (this.ds.isInstructor(playerName)) {
+                this.playerDataMap[playerName].isInstructor = true;
+                this.playerDataMap[playerName].commandAccess = true;
+                this.playerDataMap[playerName].isNamed = true;
+                return;
+            }
+
             const server: BedrockServer = this.mwss.getServer(event.getServer());
 
             // Sleep for 5 seconds
