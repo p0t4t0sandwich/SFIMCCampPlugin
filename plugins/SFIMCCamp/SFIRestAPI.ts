@@ -6,7 +6,7 @@ import multer from 'multer';
 
 
 import { SFIDataStore } from './SFIDataStore.js';
-import { SFIMCCamp } from './SFIMCCamp.js';
+import { SFIMCCamp } from './SFIMCCamp_name_system.js';
 
 export class SFIRestAPI {
     // Properties

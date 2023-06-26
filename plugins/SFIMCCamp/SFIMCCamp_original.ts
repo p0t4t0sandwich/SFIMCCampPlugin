@@ -697,11 +697,6 @@ export class SFIMCCamp extends Plugin {
         const player: Player = event.getPlayer();
         const playerName: string = player.name;
 
-        //
-        console.log("PlayerLeaveEvent");
-        console.log(event.getPlayer());
-        //
-
         // Save player location to DataStore
         this.playerDataMap[playerName].logoutLocation = {
             dimension: player.dimension,
