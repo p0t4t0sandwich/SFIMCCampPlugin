@@ -28,7 +28,7 @@ jobs:
         uses: docker/setup-qemu-action@v2
       -
         name: Init Submodules
-        run: git submodule update --init --recursive
+        uses: snickerbockers/submodules-init@v4
       -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
