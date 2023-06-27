@@ -176,7 +176,7 @@ export class SFIPlayerData {
 export class SFIDataStore extends DataStore {
     // Constructor
     constructor() {
-        super("../plugins", "SFIMCCamp");
+        super("../plugins/SFIMCCamp", "SFIDataStore");
     }
 
     // Methods
@@ -282,9 +282,12 @@ export class SFIDataStore extends DataStore {
     async addInstructor(playerName: string): Promise<void> {
         const instructorData = await this.getData("Instructors");
 
+        // Get object keys
+        const keys = Object.keys(instructorData);
+
         // Check if instructor is already in DataStore
-        if (!instructorData.includes(playerName)) {
-            instructorData.push(playerName);
+        if (!keys.includes(playerName)) {
+            instructorData[playerName] = true;
         }
 
         await this.setData("Instructors", instructorData);
@@ -295,26 +298,28 @@ export class SFIDataStore extends DataStore {
     async removeInstructor(playerName: string): Promise<void> {
         const instructorData = await this.getData("Instructors");
 
+        // Get object keys
+        const keys = Object.keys(instructorData);
+
         // Check if instructor is in DataStore
-        if (instructorData.includes(playerName)) {
-            const index = instructorData.indexOf(playerName);
-            instructorData.splice(index, 1);
+        if (keys.includes(playerName)) {
+            delete instructorData[playerName];
         }
 
         await this.setData("Instructors", instructorData);
         await this.saveData();
     }
 
-    // Check if player is an instructor
-    async isInstructor(playerName: string): Promise<boolean> {
-        const instructorData = await this.getData("Instructors");
-        return instructorData.includes(playerName);
-    }
-
     // Get all instructors
     async getInstructors(): Promise<string[]> {
         const instructorData = await this.getData("Instructors");
-        return instructorData;
+        return Object.keys(instructorData);
+    }
+
+    // Check if player is an instructor
+    async isInstructor(playerName: string): Promise<boolean> {
+        const instructors: string[] = await this.getInstructors();
+        return instructors.includes(playerName);
     }
 
     // -------------------------------- Campers --------------------------------

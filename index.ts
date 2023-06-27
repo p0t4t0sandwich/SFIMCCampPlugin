@@ -1,7 +1,7 @@
 import { MinecraftWebSocket } from "./minecraft-be-websocket-api/lib/MinecraftWebSocket.js";
 
 // Import Plugins
-import { SFIMCCamp } from "./plugins/SFIMCCamp/SFIMCCamp_name_system.js";
+import { SFIMCCamp } from "./plugins/SFIMCCamp/SFIMCCamp.js";
 
 async function main() {
     // Minecraft Web Socket

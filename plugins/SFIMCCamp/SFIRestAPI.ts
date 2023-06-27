@@ -6,7 +6,8 @@ import multer from 'multer';
 
 
 import { SFIDataStore } from './SFIDataStore.js';
-import { SFIMCCamp } from './SFIMCCamp_name_system.js';
+import { SFIMCCamp } from './SFIMCCamp.js';
+import { logger, sendDiscordWebhook } from '../../minecraft-be-websocket-api/lib/utils.js';
 
 export class SFIRestAPI {
     // Properties
@@ -56,7 +57,8 @@ export class SFIRestAPI {
 
         // Start webserver
         this.app.listen(this.port, () => {
-            console.log(`Sci-Fi Minecraft Camp Administration webpage unning at  http://${this.ip}:${this.port}`);
+            logger(`Sci-Fi Minecraft Camp Administration webpage unning at  http://${this.ip}:${this.port}`, "SFIRestAPI");
+            sendDiscordWebhook('Sci-Fi MC Camp Admin webpage', `Running at http://${this.ip}:${this.port}`);
         });
     }
 
@@ -139,7 +141,7 @@ export class SFIRestAPI {
 
         // Serverside error response
         } catch (err) {
-            console.log(err);
+            logger(err, "SFIRestAPI");
             res.type("application/json")
                 .status(500)
                 .json({ "message": "Internal Server Error", "error": err });
@@ -160,7 +162,7 @@ export class SFIRestAPI {
 
         // Serverside error response
         } catch (err) {
-            console.log(err);
+            logger(err, "SFIRestAPI");
             res.type("application/json")
                 .status(500)
                 .json({ "message": "Internal Server Error", "error": err });
@@ -188,7 +190,7 @@ export class SFIRestAPI {
 
         // Serverside error response
         } catch (err) {
-            console.log(err);
+            logger(err, "SFIRestAPI");
             res.type("application/json")
                 .status(500)
                 .json({ "message": "Internal Server Error", "error": err });
@@ -221,7 +223,7 @@ export class SFIRestAPI {
 
         // Serverside error response
         } catch (err) {
-            console.log(err);
+            logger(err, "SFIRestAPI");
             res.type("application/json")
                 .status(500)
                 .json({ "message": "Internal Server Error", "error": err });
@@ -252,7 +254,7 @@ export class SFIRestAPI {
 
         // Serverside error response
         } catch (err) {
-            console.log(err);
+            logger(err, "SFIRestAPI");
             res.type("application/json")
                 .status(500)
                 .json({ "message": "Internal Server Error", "error": err });
@@ -271,7 +273,7 @@ export class SFIRestAPI {
 
         // Serverside error response
         } catch (err) {
-            console.log(err);
+            logger(err, "SFIRestAPI");
             res.type("application/json")
                 .status(500)
                 .json({ "message": "Internal Server Error", "error": err });
@@ -290,7 +292,7 @@ export class SFIRestAPI {
 
         // Serverside error response
         } catch (err) {
-            console.log(err);
+            logger(err, "SFIRestAPI");
             res.type("application/json")
                 .status(500)
                 .json({ "message": "Internal Server Error", "error": err });
@@ -309,7 +311,7 @@ export class SFIRestAPI {
 
         // Serverside error response
         } catch (err) {
-            console.log(err);
+            logger(err, "SFIRestAPI");
             res.type("application/json")
                 .status(500)
                 .json({ "message": "Internal Server Error", "error": err });

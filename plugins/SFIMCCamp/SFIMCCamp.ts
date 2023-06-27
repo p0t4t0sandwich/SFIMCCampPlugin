@@ -1,14 +1,13 @@
 // SFIMCCamp - Main plugin file
 // Author: p0t4t0sandwich
 
-
 import { BedrockServer } from "../../minecraft-be-websocket-api/lib/BedrockServer.js";
 import { MinecraftWebSocket } from "../../minecraft-be-websocket-api/lib/MinecraftWebSocket.js";
 import { Plugin } from "../../minecraft-be-websocket-api/lib/Plugin.js";
 import { EventName, Player, PlayerJoinEvent, PlayerLeaveEvent, PlayerMessageEvent, PlayerTransformEvent } from "../../minecraft-be-websocket-api/lib/events/Events.js";
+import { logger } from "../../minecraft-be-websocket-api/lib/utils.js";
 import { SFIDataStore, SFIPlayerData } from './SFIDataStore.js';
 import { SFIRestAPI } from './SFIRestAPI.js';
-
 
 // Sleep function
 function sleep(ms: number) {
@@ -31,8 +30,8 @@ export class SFIMCCamp extends Plugin {
     // Constructor
     constructor() {
         super(
-            "Name Player Command",
-            "Allows players to set a custom name for themselves (Displayed below their in-game name).",
+            "SFIMCCamp Plugin",
+            "Aims to ease the player-naming process, add user commands, and general utilities for the Sci-Fi Minecraft Camp.",
             "1.0.0",
             "p0t4t0sandwich"
         );
@@ -574,7 +573,7 @@ export class SFIMCCamp extends Plugin {
     // -------------------------------------- Event Handlers --------------------------------------
 
     // Handle PlayerMessage
-    async handlePlayerMessage(event: PlayerMessageEvent) {
+    async handlePlayerMessage(event: PlayerMessageEvent): Promise<void> {
         event = new PlayerMessageEvent(event);
         const server: BedrockServer = this.mwss.getServer(event.getServer());
         const playerName: string = event.getSender();
@@ -590,45 +589,45 @@ export class SFIMCCamp extends Plugin {
                 await this.nameCommand(server, playerName, cmd);
                 break;
 
-            // tpa command
-            case "!tpa":
-            case "!tpask":
-                await this.tpaCommand(server, playerName, cmd);
-                break;
+            // // tpa command
+            // case "!tpa":
+            // case "!tpask":
+            //     await this.tpaCommand(server, playerName, cmd);
+            //     break;
 
-            // tpaccept command
-            case "!tpaccept":
-                await this.tpacceptCommand(server, playerName, cmd);
-                break;
+            // // tpaccept command
+            // case "!tpaccept":
+            //     await this.tpacceptCommand(server, playerName, cmd);
+            //     break;
 
-            // tpdeny command
-            case "!tpdeny":
-                await this.tpdenyCommand(server, playerName, cmd);
-                break;
+            // // tpdeny command
+            // case "!tpdeny":
+            //     await this.tpdenyCommand(server, playerName, cmd);
+            //     break;
 
-            // tpcancel command
-            case "!tpcancel":
-                await this.tpcancelCommand(server, playerName, cmd);
-                break;
+            // // tpcancel command
+            // case "!tpcancel":
+            //     await this.tpcancelCommand(server, playerName, cmd);
+            //     break;
 
-            // tphere command
-            case "!tphere":
-                await this.tphereCommand(server, playerName, cmd);
+            // // tphere command
+            // case "!tphere":
+            //     await this.tphereCommand(server, playerName, cmd);
 
-            // gamemode command
-            case "!gamemode":
-                await this.gamemodeCommand(server, playerName, cmd);
-                break;
+            // // gamemode command
+            // case "!gamemode":
+            //     await this.gamemodeCommand(server, playerName, cmd);
+            //     break;
 
-            // gmc command
-            case "!gmc":
-                await this.gamemodeCommand(server, playerName, ["!gamemode", "creative"]);
-                break;
+            // // gmc command
+            // case "!gmc":
+            //     await this.gamemodeCommand(server, playerName, ["!gamemode", "creative"]);
+            //     break;
 
-            // gms command
-            case "!gms":
-                await this.gamemodeCommand(server, playerName, ["!gamemode", "survival"]);
-                break;
+            // // gms command
+            // case "!gms":
+            //     await this.gamemodeCommand(server, playerName, ["!gamemode", "survival"]);
+            //     break;
 
             // n command
             case "!n":
@@ -640,14 +639,14 @@ export class SFIMCCamp extends Plugin {
                 await this.setNameChestCommand(server, playerName, cmd);
                 break;
 
-            // commandaccess command
-            case "!commandaccess":
-                await this.commandAccessCommand(server, playerName, cmd);
-                break;
+            // // commandaccess command
+            // case "!commandaccess":
+            //     await this.commandAccessCommand(server, playerName, cmd);
+            //     break;
 
-            // allcommandaccess command
-            case "!allcommandaccess":
-                await this.allCommandAccessCommand(server, playerName, cmd);
+            // // allcommandaccess command
+            // case "!allcommandaccess":
+            //     await this.allCommandAccessCommand(server, playerName, cmd);
 
             // nametitle command
             case "!nametitle":
@@ -663,32 +662,44 @@ export class SFIMCCamp extends Plugin {
     // Handle PlayerJoin
     async handlePlayerJoin(event: PlayerJoinEvent): Promise<void> {
         event = new PlayerJoinEvent(event);
-        const playerName: string = event.getPlayer().name;
+        const player: Player = event.getPlayer();
+        const playerName: string = player.name;
+        const playerId: number = player.id;
         const server: BedrockServer = this.mwss.getServer(event.getServer());
 
-        // Add player to local cache
-        this.playerDataMap[playerName] = await this.ds.getPlayerData(event.getPlayer().id);
+        let playerData: SFIPlayerData = await this.ds.getPlayerData(playerId);
 
-        // Check to see if the player is an instructor
-        if (this.ds.isInstructor(playerName)) {
-            this.playerDataMap[playerName].isInstructor = true;
-            this.playerDataMap[playerName].commandAccess = true;
-            this.playerDataMap[playerName].isNamed = true;
+            if (!playerData) {
+                playerData = SFIPlayerData.newPlayer(player, await this.ds.isInstructor(playerName));
+            }
+
+            // Add player to local cache
+            this.playerDataMap[playerName] = playerData;
+
+            // Check to see if the player is an instructor
+            if (this.playerDataMap[playerName].isInstructor === true) {
+                this.playerDataMap[playerName].commandAccess = true;
+                this.playerDataMap[playerName].isNamed = true;
+                await this.ds.setPlayerData(playerId, this.playerDataMap[playerName]);
+                return;
+            }
+            await this.ds.setPlayerData(playerId, this.playerDataMap[playerName]);
+
+            // Sleep for 5 seconds
+            await sleep(5000);
+
+            // Set gamemode to adventure
+            await server.gamemodeCommand("adventure", playerName);
+
+            // Send message to player
+            await server.tellCommand(playerName, "Welcome back! To set your name, type !name yourName");
+
+            // Set title
+            await server.sendCommand(`title ${playerName} times 0 10000 0`);
+            await server.sendCommand(`title ${playerName} title Please set your name\nusing: !name yourName`);
+
+            // Return
             return;
-        }
-
-        // Sleep for 5 seconds
-        await sleep(5000);
-
-        // Set gamemode to adventure
-        await server.gamemodeCommand("adventure", playerName);
-
-        // Send message to player
-        await server.tellCommand(playerName, "Welcome back! To set your name, type !name yourName");
-
-        // Set title
-        await server.sendCommand(`title ${playerName} times 0 10000 0`);
-        await server.sendCommand(`title ${playerName} title Please set your name\nusing: !name yourName`);
     }
 
     // Handle PlayerLeave
@@ -719,15 +730,23 @@ export class SFIMCCamp extends Plugin {
 
         // Check if player is in local cache
         if (!this.playerDataMap[playerName]) {
-            this.playerDataMap[playerName] = await this.ds.getPlayerData(playerId);
+            let playerData: SFIPlayerData = await this.ds.getPlayerData(playerId);
+
+            if (!playerData) {
+                playerData = SFIPlayerData.newPlayer(player, await this.ds.isInstructor(playerName));
+            }
+
+            // Add player to local cache
+            this.playerDataMap[playerName] = playerData;
 
             // Check to see if the player is an instructor
-            if (this.ds.isInstructor(playerName)) {
-                this.playerDataMap[playerName].isInstructor = true;
+            if (this.playerDataMap[playerName].isInstructor === true) {
                 this.playerDataMap[playerName].commandAccess = true;
                 this.playerDataMap[playerName].isNamed = true;
+                await this.ds.setPlayerData(playerId, this.playerDataMap[playerName]);
                 return;
             }
+            await this.ds.setPlayerData(playerId, this.playerDataMap[playerName]);
 
             const server: BedrockServer = this.mwss.getServer(event.getServer());
 
@@ -758,6 +777,6 @@ export class SFIMCCamp extends Plugin {
 
         this.restAPI = new SFIRestAPI(this, this.ds);
 
-        console.log("Sci-Fi Minecraft Camp plugin started!");
+        logger("Sci-Fi Minecraft Camp plugin started!", this.name);
     }
 }

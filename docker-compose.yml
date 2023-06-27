@@ -1,0 +1,20 @@
+---
+version: "3.8"
+services:
+  sfi-mc-camp-plugin:
+    image: p0t4t0sandwich/sfi-mc-camp-plugin:latest
+    container_name: sfi-mc-camp-plugin
+    environment:
+      - TZ=UTC
+      - WEBSOCKET_PORT=4005          # Port to serve the websocket on
+      - REST_PORT=4006               # Port to serve the REST API on
+      - PLUGIN_REST_PORT=4007        # Port for the admin webpage
+      - DISCORD_WEBHOOK_URL=         # Discord webhook URL to send connection info to
+    volumes:
+      - ./SFIMCCamp/logs:/app/logs/
+      - ./SFIMCCamp/SFIDataStore:/app/dist/plugins/SFIMCCamp/SFIDataStore
+    ports:
+      - "0.0.0.0:4005:4005"
+      - "0.0.0.0:4006:4006"
+      - "0.0.0.0:4007:4007"
+    restart: unless-stopped
