@@ -4,7 +4,12 @@
 import { BedrockServer } from "../../minecraft-be-websocket-api/lib/BedrockServer.js";
 import { MinecraftWebSocket } from "../../minecraft-be-websocket-api/lib/MinecraftWebSocket.js";
 import { Plugin } from "../../minecraft-be-websocket-api/lib/Plugin.js";
-import { EventName, Player, PlayerJoinEvent, PlayerLeaveEvent, PlayerMessageEvent, PlayerTransformEvent } from "../../minecraft-be-websocket-api/lib/events/Events.js";
+import { EventName } from "../../minecraft-be-websocket-api/lib/events/BedrockEvent.js";
+import { PlayerJoinEvent } from "../../minecraft-be-websocket-api/lib/events/PlayerJoinEvent.js";
+import { PlayerLeaveEvent } from "../../minecraft-be-websocket-api/lib/events/PlayerLeaveEvent.js";
+import { PlayerMessageEvent } from "../../minecraft-be-websocket-api/lib/events/PlayerMessageEvent.js";
+import { PlayerTransformEvent } from "../../minecraft-be-websocket-api/lib/events/PlayerTransformEvent.js";
+import { Player } from "../../minecraft-be-websocket-api/lib/game/Player.js";
 import { logger } from "../../minecraft-be-websocket-api/lib/utils.js";
 import { SFIDataStore, SFIPlayerData } from './SFIDataStore.js';
 import { SFIRestAPI } from './SFIRestAPI.js';
@@ -423,10 +428,10 @@ export class SFIMCCamp extends Plugin {
         }
 
         // Get the location of the chest from the comand
-        const name = cmd[1];
-        const x = parseInt(cmd[2]);
-        const y = parseInt(cmd[3]);
-        const z = parseInt(cmd[4]);
+        const name: string = cmd[1];
+        const x: number = parseInt(cmd[2]);
+        const y: number = parseInt(cmd[3]);
+        const z: number = parseInt(cmd[4]);
 
         // Set the location of the chest in the DataStore
         await this.ds.setChestLocation(name, { x, y, z });
@@ -639,14 +644,14 @@ export class SFIMCCamp extends Plugin {
                 await this.setNameChestCommand(server, playerName, cmd);
                 break;
 
-            // // commandaccess command
-            // case "!commandaccess":
-            //     await this.commandAccessCommand(server, playerName, cmd);
-            //     break;
+            // commandaccess command
+            case "!commandaccess":
+                await this.commandAccessCommand(server, playerName, cmd);
+                break;
 
-            // // allcommandaccess command
-            // case "!allcommandaccess":
-            //     await this.allCommandAccessCommand(server, playerName, cmd);
+            // allcommandaccess command
+            case "!allcommandaccess":
+                await this.allCommandAccessCommand(server, playerName, cmd);
 
             // nametitle command
             case "!nametitle":
@@ -672,6 +677,8 @@ export class SFIMCCamp extends Plugin {
             if (!playerData) {
                 playerData = SFIPlayerData.newPlayer(player, await this.ds.isInstructor(playerName));
             }
+
+            playerData.playerName = playerName;
 
             // Add player to local cache
             this.playerDataMap[playerName] = playerData;
@@ -736,6 +743,8 @@ export class SFIMCCamp extends Plugin {
                 playerData = SFIPlayerData.newPlayer(player, await this.ds.isInstructor(playerName));
             }
 
+            playerData.playerName = playerName;
+
             // Add player to local cache
             this.playerDataMap[playerName] = playerData;
 
@@ -749,9 +758,6 @@ export class SFIMCCamp extends Plugin {
             await this.ds.setPlayerData(playerId, this.playerDataMap[playerName]);
 
             const server: BedrockServer = this.mwss.getServer(event.getServer());
-
-            // Sleep for 5 seconds
-            await sleep(5000);
 
             // Set gamemode to adventure
             await server.gamemodeCommand("adventure", playerName);

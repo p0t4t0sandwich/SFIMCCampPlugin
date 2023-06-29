@@ -2,7 +2,7 @@
 // Author: p0t4t0sandwich
 
 import { DataStore } from "../../minecraft-be-websocket-api/lib/DataStore.js";
-import { Player } from "../../minecraft-be-websocket-api/lib/events/Events.js";
+import { Player } from "../../minecraft-be-websocket-api/lib/game/Player.js";
 
 
 // Interfaces
@@ -83,7 +83,7 @@ export class SFIPlayerData {
             },
             isInstructor: isInstructor,
             isNamed: false,
-            commandAccess: false,
+            commandAccess: true,
             outgoingTpaRequest: "",
             incomingTpaRequest: ""
         });
