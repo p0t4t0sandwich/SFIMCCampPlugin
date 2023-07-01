@@ -187,7 +187,10 @@ export class SFIDataStore extends DataStore {
     async getPlayerData(playerId: number): Promise<SFIPlayerData> {
         const playerData = await this.getData("PlayerData");
         const stringId = playerId.toString();
-        return playerData[stringId];
+
+        if (!playerData[stringId]) return undefined;
+
+        return SFIPlayerData.fromJSON(playerData[stringId]);
     }
 
     // Set player data in DataStore
@@ -243,28 +246,24 @@ export class SFIDataStore extends DataStore {
     // Get next player from queue
     async getNextPlayerNameQueue(): Promise<nameData> {
         const nameData = await this.getData("PlayerNameQueue");
-        return nameData[0];
+        const keys = Object.keys(nameData);
+        return nameData[keys[0]];
     }
 
     // Add player to queue
     async addPlayerNameQueue(playerName: string, realName: string): Promise<void> {
         const nameData = await this.getData("PlayerNameQueue");
-        nameData.push(<nameData>{ playerName, realName });
+        nameData[realName] = <nameData>{ playerName, realName };
         await this.setData("PlayerNameQueue", nameData);
         await this.saveData();
     }
 
     // Remove player from queue
     async removePlayerNameQueue(playerName: string): Promise<void> {
-        const nameData: nameData[] = await this.getData("PlayerNameQueue");
+        const nameData = await this.getData("PlayerNameQueue");
 
         // Check if player is in queue
-        for (let i = 0; i < nameData.length; i++) {
-            if (nameData[i].playerName == playerName) {
-                nameData.splice(i, 1);
-                break;
-            }
-        }
+        if (nameData[playerName]) delete nameData[playerName];
 
         await this.setData("PlayerNameQueue", nameData);
         await this.saveData();

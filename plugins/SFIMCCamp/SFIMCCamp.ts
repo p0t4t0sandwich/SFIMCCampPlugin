@@ -75,7 +75,7 @@ export class SFIMCCamp extends Plugin {
         await server.sendCommand(`title ${playerName} reset`);
 
         // Add playerName to playerData
-        playerData.setRealName(realName);
+        playerData.realName = realName;
 
         // Add playerName to be-named queue
         await this.ds.addPlayerNameQueue(playerName, realName);
@@ -394,16 +394,16 @@ export class SFIMCCamp extends Plugin {
         const chestLocation = await this.ds.getChestLocation(playerToBeNamed.realName);
 
         // Clone the chest to the player's location
-        await server.sendCommand(`execute "${playerName}" ~ ~ ~ clone ${chestLocation.x} ${chestLocation.y} ${chestLocation.z} ${chestLocation.x} ${chestLocation.y} ${chestLocation.z} ~ ~ ~`);
+        await server.sendCommand(`execute as ${playerName} run clone ${chestLocation.x} ${chestLocation.y} ${chestLocation.z} ${chestLocation.x} ${chestLocation.y} ${chestLocation.z} ~ ~ ~`);
 
         // Break the chest with setblock
-        await server.sendCommand(`execute "${playerName}" ~ ~ ~ setblock ~ ~ ~ air 0 destroy`);
+        await server.sendCommand(`execute as ${playerName} run setblock ~ ~ ~ air 0 destroy`);
 
-        // Sleep for 0.5 seconds
-        await sleep(500);
+        // Sleep for 2 seconds
+        await sleep(2000);
 
         // Teleport the player to the toBeNamedPlayer
-        await server.tellCommand(playerName, `Teleporting to ${playerToBeNamed.name}.`);
+        await server.tellCommand(playerName, `Teleporting to ${playerToBeNamed.realName}.`);
         await server.teleportPlayerToPlayerCommand(playerName, playerToBeNamed.playerName);
 
         // Give the player slowness 10 and resistance 10 for 15 seconds
@@ -684,9 +684,9 @@ export class SFIMCCamp extends Plugin {
             this.playerDataMap[playerName] = playerData;
 
             // Check to see if the player is an instructor
-            if (this.playerDataMap[playerName].isInstructor === true) {
-                this.playerDataMap[playerName].commandAccess = true;
-                this.playerDataMap[playerName].isNamed = true;
+            if (this.playerDataMap[playerName]["isInstructor"] === true) {
+                this.playerDataMap[playerName]["commandAccess"] = true;
+                this.playerDataMap[playerName]["isNamed"] = true;
                 await this.ds.setPlayerData(playerId, this.playerDataMap[playerName]);
                 return;
             }
@@ -716,7 +716,8 @@ export class SFIMCCamp extends Plugin {
         const playerName: string = player.name;
 
         // Save player location to DataStore
-        this.playerDataMap[playerName].logoutLocation = {
+        if (this.playerDataMap[playerName] === undefined) return;
+        this.playerDataMap[playerName]["logoutLocation"] = {
             dimension: player.dimension,
             position: player.position,
         };
@@ -749,9 +750,9 @@ export class SFIMCCamp extends Plugin {
             this.playerDataMap[playerName] = playerData;
 
             // Check to see if the player is an instructor
-            if (this.playerDataMap[playerName].isInstructor === true) {
-                this.playerDataMap[playerName].commandAccess = true;
-                this.playerDataMap[playerName].isNamed = true;
+            if (this.playerDataMap[playerName]["isInstructor"] === true) {
+                this.playerDataMap[playerName]["commandAccess"] = true;
+                this.playerDataMap[playerName]["isNamed"] = true;
                 await this.ds.setPlayerData(playerId, this.playerDataMap[playerName]);
                 return;
             }
