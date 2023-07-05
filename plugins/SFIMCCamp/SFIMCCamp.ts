@@ -61,7 +61,7 @@ export class SFIMCCamp extends Plugin {
             if (playerData && playerData.commandAccess === false) return;
 
             if (cmd.length < 2) {
-                await server.tellCommand(playerName, "Usage: !name yourName");
+                await server.tellCommand(playerName, "Usage: .name yourName");
                 return;
             }
 
@@ -82,9 +82,9 @@ export class SFIMCCamp extends Plugin {
             await this.ds.addPlayerNameQueue(playerName, realName);
 
             // Send message to instructors
-            await this.broadcastToInstructors(server, `${playerName} has been added to the naming queue. Use "!n" to teleport to them.`);
+            await this.broadcastToInstructors(server, `${playerName} has been added to the naming queue. Use ".n" to teleport to them.`);
         } catch (error) {
-            logger(error, this.name);
+            logger(error, this.name + " Error");
         }
     }
 
@@ -96,7 +96,7 @@ export class SFIMCCamp extends Plugin {
             if (playerData && playerData.commandAccess === false) return;
 
             if (cmd.length < 2) {
-                await server.tellCommand(playerName, "Usage: !tpa <playerName>");
+                await server.tellCommand(playerName, "Usage: .tpa <playerName>");
                 return;
             }
 
@@ -122,19 +122,19 @@ export class SFIMCCamp extends Plugin {
             }
 
             if (!playerData.realName || playerData.realName === "") {
-                await server.tellCommand(playerName, 'You must set your name with "!name yourName" before using this command.');
+                await server.tellCommand(playerName, 'You must set your name with ".name yourName" before using this command.');
                 return;
             }
 
             // Send tpa request to target
-            await server.tellCommand(targetPlayer.playerName, `${playerData.realName} has requested to teleport to you. Type "!tpaccept playerName" to accept.`);
+            await server.tellCommand(targetPlayer.playerName, `${playerData.realName} has requested to teleport to you. Type ".tpaccept playerName" to accept.`);
             await server.tellCommand(playerName, `Sent tpa request to ${targetPlayer.realName}.`);
 
             // Save tpa request to playerData
             playerData.setOutgoingTpaRequest(targetPlayer.playerName, 120000);
             targetPlayer.setIncomingTpaRequest(playerName, 120000);
         } catch (error) {
-            logger(error, this.name);
+            logger(error, this.name + " Error");
         }
     }
 
@@ -146,7 +146,7 @@ export class SFIMCCamp extends Plugin {
             if (playerData && playerData.commandAccess === false) return;
 
             if (cmd.length < 2) {
-                await server.tellCommand(playerName, "Usage: !tpaccept playerName");
+                await server.tellCommand(playerName, "Usage: .tpaccept playerName");
                 return;
             }
 
@@ -167,7 +167,7 @@ export class SFIMCCamp extends Plugin {
             }
 
             if (!playerData.realName || playerData.realName === "") {
-                await server.tellCommand(playerName, 'You must set your name with "!name yourName" before using this command.');
+                await server.tellCommand(playerName, 'You must set your name with ".name yourName" before using this command.');
                 return;
             }
 
@@ -182,7 +182,7 @@ export class SFIMCCamp extends Plugin {
             await server.tellCommand(playerName, `Teleported to ${targetPlayer.realName}.`);
             await server.tellCommand(targetPlayer.playerName, `${playerData.realName} has teleported to you.`);
         } catch (error) {
-            logger(error, this.name);
+            logger(error, this.name + " Error");
         }
     }
 
@@ -194,7 +194,7 @@ export class SFIMCCamp extends Plugin {
             if (playerData && playerData.commandAccess === false) return;
 
             if (cmd.length < 2) {
-                await server.tellCommand(playerName, "Usage: !tpdeny playerName");
+                await server.tellCommand(playerName, "Usage: .tpdeny playerName");
                 return;
             }
 
@@ -215,7 +215,7 @@ export class SFIMCCamp extends Plugin {
             }
 
             if (!playerData.realName || playerData.realName === "") {
-                await server.tellCommand(playerName, 'You must set your name with "!name yourName" before using this command.');
+                await server.tellCommand(playerName, 'You must set your name with ".name yourName" before using this command.');
                 return;
             }
 
@@ -233,7 +233,7 @@ export class SFIMCCamp extends Plugin {
             await server.tellCommand(playerName, `Denied tpa request from ${targetPlayer.realName}.`);
             await server.tellCommand(targetPlayer.playerName, `${playerData.realName} denied your tpa request.`);
         } catch (error) {
-            logger(error, this.name);
+            logger(error, this.name + " Error");
         }
     }
 
@@ -245,7 +245,7 @@ export class SFIMCCamp extends Plugin {
             if (playerData && playerData.commandAccess === false) return;
 
             if (cmd.length < 2) {
-                await server.tellCommand(playerName, "Usage: !tphere playerName");
+                await server.tellCommand(playerName, "Usage: .tphere playerName");
                 return;
             }
 
@@ -266,7 +266,7 @@ export class SFIMCCamp extends Plugin {
             }
 
             if (!playerData.realName || playerData.realName === "") {
-                await server.tellCommand(playerName, 'You must set your name with "!name yourName" before using this command.');
+                await server.tellCommand(playerName, 'You must set your name with ".name yourName" before using this command.');
                 return;
             }
 
@@ -284,7 +284,7 @@ export class SFIMCCamp extends Plugin {
             await server.tellCommand(playerName, `Sent tphere request to ${targetPlayer.realName}.`);
             await server.tellCommand(targetPlayer.playerName, `${playerData.realName} has requested that you teleport to them.`);
         } catch (error) {
-            logger(error, this.name);
+            logger(error, this.name + " Error");
         }
     }
 
@@ -296,7 +296,7 @@ export class SFIMCCamp extends Plugin {
             if (playerData && playerData.commandAccess === false) return;
 
             if (cmd.length < 2) {
-                await server.tellCommand(playerName, "Usage: !tpcancel playerName");
+                await server.tellCommand(playerName, "Usage: .tpcancel playerName");
                 return;
             }
 
@@ -317,7 +317,7 @@ export class SFIMCCamp extends Plugin {
             }
 
             if (!playerData.realName || playerData.realName === "") {
-                await server.tellCommand(playerName, 'You must set your name with "!name yourName" before using this command.');
+                await server.tellCommand(playerName, 'You must set your name with ".name yourName" before using this command.');
                 return;
             }
 
@@ -335,7 +335,7 @@ export class SFIMCCamp extends Plugin {
             await server.tellCommand(playerName, `Cancelled tpa request to ${targetPlayer.realName}.`);
             await server.tellCommand(targetPlayer.playerName, `${playerData.realName} cancelled their tpa request.`);
         } catch (error) {
-            logger(error, this.name);
+            logger(error, this.name + " Error");
         }
     }
 
@@ -347,14 +347,14 @@ export class SFIMCCamp extends Plugin {
             if (playerData && playerData.commandAccess === false) return;
 
             if (cmd.length < 2) {
-                await server.tellCommand(playerName, "Usage: !gamemode gamemode");
+                await server.tellCommand(playerName, "Usage: .gamemode gamemode");
                 return;
             }
 
             // Get player name from DataStore
             const actualPlayerName: string = playerData.realName;
             if (!actualPlayerName) {
-                await server.tellCommand(playerName, 'You must set your name with "!name yourName" before using this command.');
+                await server.tellCommand(playerName, 'You must set your name with ".name yourName" before using this command.');
                 return;
             }
 
@@ -373,7 +373,7 @@ export class SFIMCCamp extends Plugin {
             // Tell player
             await server.tellCommand(playerName, `Gamemode set to ${gamemode}.`);
         } catch (error) {
-            logger(error, this.name);
+            logger(error, this.name + " Error");
         }
     }
 
@@ -445,7 +445,7 @@ export class SFIMCCamp extends Plugin {
             // Remove player from queue
             await this.ds.removePlayerNameQueue(playerToBeNamed.playerName);
         } catch (error) {
-            logger(error, this.name);
+            logger(error, this.name + " Error");
         }
     }
 
@@ -456,7 +456,7 @@ export class SFIMCCamp extends Plugin {
             if (await this.ds.isInstructor(playerName) === false) return;
 
             if (cmd.length < 5) {
-                await server.tellCommand(playerName, "Usage: !setnamechest campersName x y z");
+                await server.tellCommand(playerName, "Usage: .setnamechest campersName x y z");
                 return;
             }
 
@@ -472,7 +472,35 @@ export class SFIMCCamp extends Plugin {
             // Send confirmation message
             await server.tellCommand(playerName, `Set the location of the nametag chest for ${name} to ${x} ${y} ${z}.`);
         } catch (error) {
-            logger(error, this.name);
+            logger(error, this.name + " Error");
+        }
+    }
+
+    // getnamechest command
+    async getNameChestCommand(server: BedrockServer, playerName: string, cmd: string[]): Promise<void> {
+        try {
+            // Check if the user has permission to use this command
+            if (await this.ds.isInstructor(playerName) === false) return;
+
+            if (cmd.length < 2) {
+                await server.tellCommand(playerName, "Usage: .getnamechest campersName");
+                return;
+            }
+
+            // Get the location of the chest from the DataStore
+            const name: string = cmd[1];
+            const chestLocation = await this.ds.getChestLocation(name);
+
+            // Clone the chest to the player's location
+            await server.sendCommand(`execute as ${playerName} run clone ${chestLocation.x} ${chestLocation.y} ${chestLocation.z} ${chestLocation.x} ${chestLocation.y} ${chestLocation.z} ~ ~ ~`);
+
+            // Break the chest with setblock
+            await server.sendCommand(`execute as ${playerName} run setblock ~ ~ ~ air 0 destroy`);
+
+            // Send confirmation message
+            await server.tellCommand(playerName, `Cloned the nametag chest for ${name} to your location.`);
+        } catch (error) {
+            logger(error, this.name + " Error");
         }
     }
 
@@ -483,7 +511,7 @@ export class SFIMCCamp extends Plugin {
             if (await this.ds.isInstructor(playerName) === false) return;
 
             if (cmd.length < 2) {
-                await server.tellCommand(playerName, "Usage: !commandaccess camperName true/false");
+                await server.tellCommand(playerName, "Usage: .commandaccess camperName true/false");
                 return;
             }
 
@@ -506,7 +534,7 @@ export class SFIMCCamp extends Plugin {
             // Send confirmation message
             await server.tellCommand(playerName, `Set command access for ${targetRealName} to ${access}.`);
         } catch (error) {
-            logger(error, this.name);
+            logger(error, this.name + " Error");
         }
     }
 
@@ -517,7 +545,7 @@ export class SFIMCCamp extends Plugin {
             if (await this.ds.isInstructor(playerName) === false) return;
 
             if (cmd.length < 2) {
-                await server.tellCommand(playerName, "Usage: !allcommandaccess true/false");
+                await server.tellCommand(playerName, "Usage: .allcommandaccess true/false");
                 return;
             }
 
@@ -533,7 +561,7 @@ export class SFIMCCamp extends Plugin {
             // Send confirmation message
             await server.tellCommand(playerName, `Set command access to ${access}.`);
         } catch (error) {
-            logger(error, this.name);
+            logger(error, this.name + " Error");
         }
     }
 
@@ -544,7 +572,7 @@ export class SFIMCCamp extends Plugin {
             if (await this.ds.isInstructor(playerName) === false) return;
 
             if (cmd.length < 2) {
-                await server.tellCommand(playerName, "Usage: !nametitle MinecraftPlayerName");
+                await server.tellCommand(playerName, "Usage: .nametitle MinecraftPlayerName");
                 return;
             }
 
@@ -556,13 +584,13 @@ export class SFIMCCamp extends Plugin {
             await server.gamemodeCommand("adventure", name);
 
             // Send message to player
-            await server.tellCommand(name, "Welcome back! To set your name, type !name yourName");
+            await server.tellCommand(name, "Welcome back! To set your name, type .name yourName");
 
             // Set title
             await server.sendCommand(`title ${name} times 0 10000 0`);
-            await server.sendCommand(`title ${name} title Please set your name\nusing: !name yourName`);
+            await server.sendCommand(`title ${name} title Please set your name\nusing: .name yourName`);
         } catch (error) {
-            logger(error, this.name);
+            logger(error, this.name + " Error");
         }
     }
 
@@ -639,71 +667,76 @@ export class SFIMCCamp extends Plugin {
             // Command switch
             switch (cmd[0]) {
                 // Name command
-                case "!name":
+                case ".name":
                     await this.nameCommand(server, playerName, cmd);
                     break;
 
                 // // tpa command
-                // case "!tpa":
-                // case "!tpask":
+                // case ".tpa":
+                // case ".tpask":
                 //     await this.tpaCommand(server, playerName, cmd);
                 //     break;
 
                 // // tpaccept command
-                // case "!tpaccept":
+                // case ".tpaccept":
                 //     await this.tpacceptCommand(server, playerName, cmd);
                 //     break;
 
                 // // tpdeny command
-                // case "!tpdeny":
+                // case ".tpdeny":
                 //     await this.tpdenyCommand(server, playerName, cmd);
                 //     break;
 
                 // // tpcancel command
-                // case "!tpcancel":
+                // case ".tpcancel":
                 //     await this.tpcancelCommand(server, playerName, cmd);
                 //     break;
 
                 // // tphere command
-                // case "!tphere":
+                // case ".tphere":
                 //     await this.tphereCommand(server, playerName, cmd);
 
                 // // gamemode command
-                // case "!gamemode":
+                // case ".gamemode":
                 //     await this.gamemodeCommand(server, playerName, cmd);
                 //     break;
 
                 // // gmc command
-                // case "!gmc":
-                //     await this.gamemodeCommand(server, playerName, ["!gamemode", "creative"]);
+                // case ".gmc":
+                //     await this.gamemodeCommand(server, playerName, [".gamemode", "creative"]);
                 //     break;
 
                 // // gms command
-                // case "!gms":
-                //     await this.gamemodeCommand(server, playerName, ["!gamemode", "survival"]);
+                // case ".gms":
+                //     await this.gamemodeCommand(server, playerName, [".gamemode", "survival"]);
                 //     break;
 
                 // n command
-                case "!n":
+                case ".n":
                     await this.nameUserQueueCommand(server, playerName, cmd);
                     break;
 
                 // setnamechest command
-                case "!setnamechest":
+                case ".setnamechest":
                     await this.setNameChestCommand(server, playerName, cmd);
                     break;
 
+                // getnamechest command
+                case ".getnamechest":
+                    await this.getNameChestCommand(server, playerName, cmd);
+                    break;
+
                 // commandaccess command
-                case "!commandaccess":
+                case ".commandaccess":
                     await this.commandAccessCommand(server, playerName, cmd);
                     break;
 
                 // allcommandaccess command
-                case "!allcommandaccess":
+                case ".allcommandaccess":
                     await this.allCommandAccessCommand(server, playerName, cmd);
 
                 // nametitle command
-                case "!nametitle":
+                case ".nametitle":
                     await this.nameTitleCommand(server, playerName, cmd);
                     break;
 
@@ -712,7 +745,7 @@ export class SFIMCCamp extends Plugin {
                     break;
             }
         } catch (error) {
-            logger(error, this.name);
+            logger(error, this.name + " Error");
         }
     }
 
@@ -752,11 +785,11 @@ export class SFIMCCamp extends Plugin {
                 await server.gamemodeCommand("adventure", playerName);
 
                 // Send message to player
-                await server.tellCommand(playerName, "Welcome back! To set your name, type !name yourName");
+                await server.tellCommand(playerName, "Welcome back! To set your name, type .name yourName");
 
                 // Set title
                 await server.sendCommand(`title ${playerName} times 0 10000 0`);
-                await server.sendCommand(`title ${playerName} title Please set your name\nusing: !name yourName`);
+                await server.sendCommand(`title ${playerName} title Please set your name\nusing: .name yourName`);
 
                 // Return
                 return;
@@ -785,7 +818,7 @@ export class SFIMCCamp extends Plugin {
             // Remove player from toBeNamed
             await this.ds.removePlayerNameQueue(playerName);
         } catch (error) {
-            logger(error, this.name);
+            logger(error, this.name + " Error");
         }
     }
 
@@ -825,17 +858,17 @@ export class SFIMCCamp extends Plugin {
                 await server.gamemodeCommand("adventure", playerName);
 
                 // Send message to player
-                await server.tellCommand(playerName, "Welcome back! To set your name, type !name yourName");
+                await server.tellCommand(playerName, "Welcome back! To set your name, type .name yourName");
 
                 // Set title
                 await server.sendCommand(`title ${playerName} times 0 10000 0`);
-                await server.sendCommand(`title ${playerName} title Please set your name\nusing: !name yourName`);
+                await server.sendCommand(`title ${playerName} title Please set your name\nusing: .name yourName`);
 
                 // Return
                 return;
             }
         } catch (error) {
-            logger(error, this.name);
+            logger(error, this.name + " Error");
         }
     }
 

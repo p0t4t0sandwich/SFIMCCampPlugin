@@ -340,4 +340,37 @@ export class SFIDataStore extends DataStore {
         await this.setData("Campers", camperData);
         await this.saveData();
     }
+
+    // Get all campers
+    async getCampers(): Promise<string[]> {
+        const camperData = await this.getData("Campers");
+        return Object.keys(camperData);
+    }
+
+    // Check if player is a camper
+    async isCamper(playerName: string): Promise<boolean> {
+        const campers: string[] = await this.getCampers();
+        return campers.includes(playerName);
+    }
+
+    // Rename camper
+    async renameCamper(oldName: string, newName: string): Promise<void> {
+        const camperData = await this.getData("Campers");
+
+        // Check if camper is in DataStore
+        if (camperData[oldName]) {
+            camperData[newName] = camperData[oldName];
+            delete camperData[oldName];
+        }
+
+        // Update camper data in ChestLocations
+        const chestData = await this.getData("ChestLocations");
+        if (chestData[oldName]) {
+            chestData[newName] = chestData[oldName];
+            delete chestData[oldName];
+        }
+
+        await this.setData("Campers", camperData);
+        await this.saveData();
+    }
 }

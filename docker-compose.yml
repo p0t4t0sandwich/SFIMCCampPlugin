@@ -9,6 +9,7 @@ services:
       - WEBSOCKET_PORT=4005          # Port to serve the websocket on
       - REST_PORT=4006               # Port to serve the REST API on
       - PLUGIN_REST_PORT=4007        # Port for the admin webpage
+      - IP_ADDRESS=                  # IP address to send to the client
       - DISCORD_WEBHOOK_URL=         # Discord webhook URL to send connection info to
     volumes:
       - ./SFIMCCamp/logs:/app/logs/
