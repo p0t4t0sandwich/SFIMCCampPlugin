@@ -211,12 +211,28 @@ export class SFIDataStore extends DataStore {
         await this.saveData();
     }
 
+    // Remove all player data from DataStore
+    async clearAllPlayerData(): Promise<void> {
+        const data = await this.getData("PlayerData");
+        for (const playerId in data) {
+            if (data[playerId]) delete data[playerId];
+        }
+        await this.setData("PlayerData", data);
+        await this.saveData();
+    }
+
     // ----------------------------- Chest Locations -----------------------------
 
     // Get chest location from DataStore
     async getChestLocation(realName: string): Promise<positionData> {
         const chestData = await this.getData("ChestLocations");
         return chestData[realName];
+    }
+
+    // Get all chest locations from DataStore
+    async getAllChestLocations(): Promise<any> {
+        const chestData = await this.getData("ChestLocations");
+        return chestData;
     }
 
     // Set chest location in DataStore
@@ -231,6 +247,16 @@ export class SFIDataStore extends DataStore {
     async removeChestLocation(realName: string): Promise<void> {
         const data = await this.getData("ChestLocations");
         if (data[realName]) delete data[realName];
+        await this.setData("ChestLocations", data);
+        await this.saveData();
+    }
+
+    // Remove all chest locations from DataStore
+    async removeAllChestLocations(): Promise<void> {
+        const data = await this.getData("ChestLocations");
+        for (const realName in data) {
+            if (data[realName]) delete data[realName];
+        }
         await this.setData("ChestLocations", data);
         await this.saveData();
     }
@@ -265,6 +291,16 @@ export class SFIDataStore extends DataStore {
         // Check if player is in queue
         if (nameData[playerName]) delete nameData[playerName];
 
+        await this.setData("PlayerNameQueue", nameData);
+        await this.saveData();
+    }
+
+    // Remove all players from queue
+    async removeAllPlayerNameQueue(): Promise<void> {
+        const nameData = await this.getData("PlayerNameQueue");
+        for (const playerName in nameData) {
+            if (nameData[playerName]) delete nameData[playerName];
+        }
         await this.setData("PlayerNameQueue", nameData);
         await this.saveData();
     }
@@ -321,6 +357,16 @@ export class SFIDataStore extends DataStore {
         return instructors.includes(playerName);
     }
 
+    // Remove all instructors from DataStore
+    async removeAllInstructors(): Promise<void> {
+        const instructorData = await this.getData("Instructors");
+        for (const playerName in instructorData) {
+            if (instructorData[playerName]) delete instructorData[playerName];
+        }
+        await this.setData("Instructors", instructorData);
+        await this.saveData();
+    }
+
     // -------------------------------- Campers --------------------------------
 
     // Add camper to DataStore
@@ -370,6 +416,16 @@ export class SFIDataStore extends DataStore {
             delete chestData[oldName];
         }
 
+        await this.setData("Campers", camperData);
+        await this.saveData();
+    }
+
+    // Remove all campers from DataStore
+    async removeAllCampers(): Promise<void> {
+        const camperData = await this.getData("Campers");
+        for (const playerName in camperData) {
+            if (camperData[playerName]) delete camperData[playerName];
+        }
         await this.setData("Campers", camperData);
         await this.saveData();
     }

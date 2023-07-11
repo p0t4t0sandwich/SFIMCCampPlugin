@@ -3,6 +3,7 @@
 
 import express, { Express, Request, Response, Router } from 'express';
 import multer from 'multer';
+import fs from 'fs';
 
 
 import { SFIDataStore } from './SFIDataStore.js';
@@ -38,6 +39,20 @@ export class SFIRestAPI {
         this.router.get('/', this.defaultRoute.bind(this));
 
 
+        // Server Routes
+
+        // Pause servers route
+        this.router.post('/servers/pause', this.pauseServersRoute.bind(this));
+        
+        // Unpause servers route
+        this.router.post('/servers/unpause', this.unpauseServersRoute.bind(this));
+
+        // Five minute warning route
+        this.router.post('/servers/fiveMinuteWarning', this.fiveMinuteWarningRoute.bind(this));
+
+
+        // Instructor Routes
+
         // Add instructor route
         this.router.post('/instructors/add', this.addInstructorRoute.bind(this));
 
@@ -47,6 +62,11 @@ export class SFIRestAPI {
         // Add instructors from file route
         this.router.post('/instructors/addFromFile', multer().single("instructorsFile"), this.addInstructorsFromFileRoute.bind(this));
 
+        // Remove all instructors route
+        this.router.post('/instructors/removeAll', this.removeAllInstructorsRoute.bind(this));
+
+
+        // Camper Routes
 
         // Add camper route
         this.router.post('/campers/add', this.addCamperRoute.bind(this));
@@ -54,34 +74,35 @@ export class SFIRestAPI {
         // Remove camper route
         this.router.post('/campers/remove', this.removeCamperRoute.bind(this));
 
-        // Add campers from file route
-        this.router.post('/campers/addFromFile', multer().single("campersFile"), this.addCampersFromFileRoute.bind(this));
-
         // Rename camper route
         this.router.post('/campers/rename', this.renameCamperRoute.bind(this));
 
+        // Add campers from file route
+        this.router.post('/campers/addFromFile', multer().single("campersFile"), this.addCampersFromFileRoute.bind(this));
+
+        // Remove all campers route
+        this.router.post('/campers/removeAll', this.removeAllCampersRoute.bind(this));
+
+
+        // Chest Routes
 
         // Set chest location route
-        this.router.post('/setChestLocation', this.setChestLocationRoute.bind(this.sfiPlugin));
+        this.router.post('/chests/set', this.setChestLocationRoute.bind(this));
+
+        // Set chest locations route
+        this.router.post('/chests/addFromFile', multer().single("chestLocationFile"), this.setChestLocationsRoute.bind(this));
+
+        // Clear chest locations route
+        this.router.post('/chests/clear', this.clearChestLocationsRoute.bind(this));
 
 
-        // Pause servers route
-        this.router.post('/servers/pause', this.pauseServersRoute.bind(this));
-        
-        // Unpause servers route
-        this.router.post('/servers/unpause', this.unpauseServersRoute.bind(this));
-
-        // Five minute warning route
-        this.router.post('/fiveMinuteWarning', this.fiveMinuteWarningRoute.bind(this));
-
+        // System Routes
 
         // Kill process route
-        this.router.post('/killProcess', (req: Request, res: Response, next: Function) => {
-            res.type("application/json")
-                .status(200)
-                .json({ "message": "Process killed" });
-            process.exit(0);
-        });
+        this.router.post('/system/killProcess', this.killProcessRoute.bind(this));
+
+        // Clear All Player Data route
+        this.router.post('/system/clearAllPlayerData', this.clearAllPlayerDataRoute.bind(this));
 
         // Start webserver
         this.app.listen(this.port, () => {
@@ -95,114 +116,7 @@ export class SFIRestAPI {
         try {
             res.type("text/html")
                 .status(200)
-                .send(`
-                <!DOCTYPE html>
-                <html lang="en">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Sci-Fi Minecraft Camp Administration</title>
-                    <style>
-                        body {
-                            font-family: Arial, Helvetica, sans-serif;
-                        }
-                    </style>
-                </head>
-
-                <script>
-                    function pauseServers() {
-                        fetch("/servers/pause", {
-                            method: "POST"
-                        });
-                    }
-
-                    function unpauseServers() {
-                        fetch("/servers/unpause", {
-                            method: "POST"
-                        });
-                    }
-
-                    function fiveMinuteWarning() {
-                        fetch("/fiveMinuteWarning", {
-                            method: "POST"
-                        });
-                    }
-
-                    function killProcess() {
-                        fetch("/killProcess", {
-                            method: "POST"
-                        });
-                    }
-                </script>
-
-                <body>
-                    <h1>Sci-Fi Minecraft Camp Administration</h1>
-
-                    <p>Pause buttons:</p>
-                    <button onclick="pauseServers()">Pause Servers</button>
-                    <button onclick="unpauseServers()">Unpause Servers</button>
-
-                    <p>Five minute warning:</p>
-                    <button onclick="fiveMinuteWarning()">Five Minute Warning</button>
-
-                    <iframe name="dummyframe" id="dummyframe" style="display: none;"></iframe>
-
-                    <p>Add player to the instructor list:</p>
-                    <form action="/instructors/add" method="post" target="dummyframe">
-                        <input type="text" id="playerName" name="playerName" placeholder="Player Name"><br>
-                        <input type="submit" value="Submit">
-                    </form>
-
-                    <p>Remove player from the instructor list:</p>
-                    <form action="/instructors/remove" method="post" target="dummyframe">
-                        <input type="text" id="playerName" name="playerName" placeholder="Player Name"><br>
-                        <input type="submit" value="Submit">
-                    </form>
-
-                    <p>Add instructors from file:</p>
-                    <form action="/instructors/addFromFile" method="post" enctype="multipart/form-data" target="dummyframe">
-                        <input type="file" id="instructorsFile" name="instructorsFile"><br>
-                        <input type="submit" value="Submit">
-                    </form>
-
-                    <p>Add player to the camper list:</p>
-                    <form action="/campers/add" method="post" target="dummyframe">
-                        <input type="text" id="playerName" name="playerName" placeholder="Player Name"><br>
-                        <input type="submit" value="Submit">
-                    </form>
-
-                    <p>Remove player from the camper list:</p>
-                    <form action="/campers/remove" method="post" target="dummyframe">
-                        <input type="text" id="playerName" name="playerName" placeholder="Player Name"><br>
-                        <input type="submit" value="Submit">
-                    </form>
-
-                    <p>Rename player in the camper list:</p>
-                    <form action="/campers/rename" method="post" target="dummyframe">
-                        <input type="text" id="oldPlayerName" name="oldPlayerName" placeholder="Old Player Name"><br>
-                        <input type="text" id="newPlayerName" name="newPlayerName" placeholder="New Player Name"><br>
-                        <input type="submit" value="Submit">
-                    </form>
-
-                    <p>Set chest location:</p>
-                    <form action="/setChestLocation" method="post" target="dummyframe">
-                        <input type="text" id="playerName" name="playerName" placeholder="Player Name"><br>
-                        <input type="text" id="x" name="x" placeholder="X"><br>
-                        <input type="text" id="y" name="y" placeholder="Y"><br>
-                        <input type="text" id="z" name="z" placeholder="Z"><br>
-                        <input type="submit" value="Submit">
-                    </form>
-
-                    <p>Add campers from file:</p>
-                    <form action="/campers/addFromFile" method="post" enctype="multipart/form-data" target="dummyframe">
-                        <input type="file" id="campersFile" name="campersFile"><br>
-                        <input type="submit" value="Submit">
-                    </form>
-
-                    <p>Kill process:</p>
-                    <button onclick="killProcess()">Kill Process</button>
-                </body>
-                </html>
-                `);
+                .send(await fs.promises.readFile("./plugins/SFIMCCamp/index.html", "utf8"));
 
         // Serverside error response
         } catch (err) {
@@ -212,6 +126,69 @@ export class SFIRestAPI {
                 .json({ "message": "Internal Server Error", "error": err });
         }
     }
+
+
+    // Server Routes
+
+    // Pause servers route
+    async pauseServersRoute(req: Request, res: Response, next: Function): Promise<void> {
+        try {
+            // Pause servers
+            await this.sfiPlugin.pauseAllServers();
+
+            res.type("application/json")
+                .status(200)
+                .json({ "message": "Servers paused" });
+
+        // Serverside error response
+        } catch (err) {
+            logger(err, "SFIRestAPI Error");
+            res.type("application/json")
+                .status(500)
+                .json({ "message": "Internal Server Error", "error": err });
+        }
+    }
+
+    // Unpause servers route
+    async unpauseServersRoute(req: Request, res: Response, next: Function): Promise<void> {
+        try {
+            // Unpause servers
+            await this.sfiPlugin.unpauseAllServers();
+
+            res.type("application/json")
+                .status(200)
+                .json({ "message": "Servers unpaused" });
+
+        // Serverside error response
+        } catch (err) {
+            logger(err, "SFIRestAPI Error");
+            res.type("application/json")
+                .status(500)
+                .json({ "message": "Internal Server Error", "error": err });
+        }
+    }
+
+    // Five minute warning route
+    async fiveMinuteWarningRoute(req: Request, res: Response, next: Function): Promise<void> {
+        try {
+            // Send five minute warning
+            await this.sfiPlugin.fiveMinuteWarning();
+
+            res.type("application/json")
+                .status(200)
+                .json({ "message": "Five minute warning sent" });
+
+        // Serverside error response
+        } catch (err) {
+            logger(err, "SFIRestAPI Error");
+            res.type("application/json")
+                .status(500)
+                .json({ "message": "Internal Server Error", "error": err });
+        }
+    }
+
+
+    // Instructor Routes
 
     // Add instructor route
     async addInstructorRoute(req: Request, res: Response, next: Function): Promise<void> {
@@ -295,6 +272,25 @@ export class SFIRestAPI {
         }
     }
 
+    // Remove all instructors route
+    async removeAllInstructorsRoute(req: Request, res: Response, next: Function): Promise<void> {
+        try {
+            // Remove all instructors from DataStore
+            await this.ds.removeAllInstructors();
+            
+            res.type("application/json")
+                .status(200)
+                .json({ "message": "All instructors removed" });
+
+        // Serverside error response
+        } catch (err) {
+            logger(err, "SFIRestAPI Error");
+        }
+    }
+
+
+    // Camper Routes
+
     // Add camper route
     async addCamperRoute(req: Request, res: Response, next: Function): Promise<void> {
         try {
@@ -344,6 +340,35 @@ export class SFIRestAPI {
         }
     }
 
+    // Rename camper route
+    async renameCamperRoute(req: Request, res: Response, next: Function): Promise<void> {
+        try {
+            const oldPlayerName: string = req.body.oldPlayerName;
+            const newPlayerName: string = req.body.newPlayerName;
+
+            // Check if oldPlayerName is a camper
+            if (this.ds.isCamper(oldPlayerName)) {
+                // Rename oldPlayerName to newPlayerName in DataStore
+                await this.ds.renameCamper(oldPlayerName, newPlayerName);
+
+                res.type("application/json")
+                    .status(200)
+                    .json({ "message": "Player renamed in camper list", "oldPlayerName": oldPlayerName, "newPlayerName": newPlayerName });
+            } else {
+                res.type("application/json")
+                    .status(200)
+                    .json({ "message": "Player is not a camper", "playerName": oldPlayerName });
+            }
+
+        // Serverside error response
+        } catch (err) {
+            logger(err, "SFIRestAPI Error");
+            res.type("application/json")
+                .status(500)
+                .json({ "message": "Internal Server Error", "error": err });
+        }
+    }
+
     // Add campers from file route
     async addCampersFromFileRoute(req: Request, res: Response, next: Function): Promise<void> {
         try {
@@ -375,34 +400,22 @@ export class SFIRestAPI {
         }
     }
 
-    // Rename camper route
-    async renameCamperRoute(req: Request, res: Response, next: Function): Promise<void> {
+    // Remove all campers route
+    async removeAllCampersRoute(req: Request, res: Response, next: Function): Promise<void> {
         try {
-            const oldPlayerName: string = req.body.oldPlayerName;
-            const newPlayerName: string = req.body.newPlayerName;
+            // Remove all campers from DataStore
+            await this.ds.removeAllCampers();
 
-            // Check if oldPlayerName is a camper
-            if (this.ds.isCamper(oldPlayerName)) {
-                // Rename oldPlayerName to newPlayerName in DataStore
-                await this.ds.renameCamper(oldPlayerName, newPlayerName);
-
-                res.type("application/json")
-                    .status(200)
-                    .json({ "message": "Player renamed in camper list", "oldPlayerName": oldPlayerName, "newPlayerName": newPlayerName });
-            } else {
-                res.type("application/json")
-                    .status(200)
-                    .json({ "message": "Player is not a camper", "playerName": oldPlayerName });
-            }
+            res.type("application/json")
+                .status(200)
+                .json({ "message": "All campers removed" });
 
         // Serverside error response
         } catch (err) {
             logger(err, "SFIRestAPI Error");
-            res.type("application/json")
-                .status(500)
-                .json({ "message": "Internal Server Error", "error": err });
         }
     }
+
 
     // Set chest location route
     async setChestLocationRoute(req: Request, res: Response, next: Function): Promise<void> {
@@ -423,60 +436,67 @@ export class SFIRestAPI {
         }
     }
 
-    // Pause servers route
-    async pauseServersRoute(req: Request, res: Response, next: Function): Promise<void> {
+    // Set chest locations route
+    async setChestLocationsRoute(req: Request, res: Response, next: Function): Promise<void> {
         try {
-            // Pause servers
-            await this.sfiPlugin.pauseAllServers();
+            // Convert chestLocationFile to a buffer, then to a string
+            const chestLocationFileBuffer: Buffer = req.file.buffer;
+            const chestLocationFileString: string = chestLocationFileBuffer.toString();
 
-            res.type("application/json")
-                .status(200)
-                .json({ "message": "Servers paused" });
+            // Split chestLocationFileString into an array of lines
+            const chestLocationFileLines: string[] = chestLocationFileString.split("\n");
 
-        // Serverside error response
+            // Add each line to the DataStore
+            for (const line of chestLocationFileLines) {
+                const inputString: string[] = line.split(" ");
+                const playerName: string = inputString[0];
+                const x: number = parseInt(inputString[1]);
+                const y: number = parseInt(inputString[2]);
+                const z: number = parseInt(inputString[3]);
+                await this.ds.setChestLocation(playerName, { x: x, y: y, z: z });
+            }
         } catch (err) {
             logger(err, "SFIRestAPI Error");
-            res.type("application/json")
-                .status(500)
-                .json({ "message": "Internal Server Error", "error": err });
         }
     }
 
-    // Unpause servers route
-    async unpauseServersRoute(req: Request, res: Response, next: Function): Promise<void> {
+    // Clear chest locations route
+    async clearChestLocationsRoute(req: Request, res: Response, next: Function): Promise<void> {
         try {
-            // Unpause servers
-            await this.sfiPlugin.unpauseAllServers();
-
-            res.type("application/json")
-                .status(200)
-                .json({ "message": "Servers unpaused" });
-
-        // Serverside error response
+            this.ds.removeAllChestLocations();
         } catch (err) {
             logger(err, "SFIRestAPI Error");
-            res.type("application/json")
-                .status(500)
-                .json({ "message": "Internal Server Error", "error": err });
         }
     }
 
-    // Five minute warning route
-    async fiveMinuteWarningRoute(req: Request, res: Response, next: Function): Promise<void> {
-        try {
-            // Send five minute warning
-            await this.sfiPlugin.fiveMinuteWarning();
+    // System Routes
 
+    // Kill process route
+    async killProcessRoute(req: Request, res: Response, next: Function): Promise<void> {
+        try {
             res.type("application/json")
                 .status(200)
-                .json({ "message": "Five minute warning sent" });
+                .json({ "message": "Process killed" });
+
+            process.exit(0);
 
         // Serverside error response
         } catch (err) {
             logger(err, "SFIRestAPI Error");
+        }
+    }
+
+    // Clear All Player Data route
+    async clearAllPlayerDataRoute(req: Request, res: Response, next: Function): Promise<void> {
+        try {
+            this.ds.clearAllPlayerData();
+            this.ds.removeAllPlayerNameQueue();
+
             res.type("application/json")
-                .status(500)
-                .json({ "message": "Internal Server Error", "error": err });
+                .status(200)
+                .json({ "message": "All player data cleared" });
+        } catch (err) {
+            logger(err, "SFIRestAPI Error");
         }
     }
 }

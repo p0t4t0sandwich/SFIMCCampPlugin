@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Sci-Fi Minecraft Camp Administration</title>
+        <style>
+            body { font-family: Arial, Helvetica, sans-serif;}
+        </style>
+    </head>
+
+    <script>
+        // Server functions
+        function pauseServers() {
+            fetch("/servers/pause", {
+                method: "POST"
+            });
+        }
+
+        function unpauseServers() {
+            fetch("/servers/unpause", {
+                method: "POST"
+            });
+        }
+
+        function fiveMinuteWarning() {
+            fetch("/servers/fiveMinuteWarning", {
+                method: "POST"
+            });
+        }
+
+        // Instructor functions
+        function removeAllInstructors() {
+            fetch("/instructors/removeAll", {
+                method: "POST"
+            });
+        }
+
+        // Camper functions
+        function removeAllCampers() {
+            fetch("/campers/removeAll", {
+                method: "POST"
+            });
+        }
+
+        // Chest functions
+        function clearChestLocations() {
+            fetch("/chests/clear", {
+                method: "POST"
+            });
+        }
+
+        // System functions
+        function clearAllPlayerData() {
+            fetch("/system/clearAllPlayerData", {
+                method: "POST"
+            });
+        }
+
+        function killProcess() {
+            fetch("/system/killProcess", {
+                method: "POST"
+            });
+        }
+    </script>
+
+    <body>
+        <!-- This is a dummy frame to prevent the page from reloading when a form is submitted -->
+        <iframe name="dummyframe" id="dummyframe" style="display: none;"></iframe>
+
+        <h1>Sci-Fi Minecraft Camp Administration</h1>
+
+        <!-- Pause buttons -->
+        <p>Pause buttons:</p>
+        <button onclick="pauseServers()">Pause Servers</button>
+        <button onclick="unpauseServers()">Unpause Servers</button>
+
+        <!-- Five minute warning button -->
+        <p>Five minute warning:</p>
+        <button onclick="fiveMinuteWarning()">Five Minute Warning</button>
+
+        <!-- Instructor utilities -->
+        <h2>Instructor Management</h2>
+
+        <p>Add player to the instructor list:</p>
+        <form action="/instructors/add" method="post" target="dummyframe">
+            <input type="text" id="playerName" name="playerName" placeholder="Player Name"><br>
+            <input type="submit" value="Submit">
+        </form>
+
+        <p>Remove player from the instructor list:</p>
+        <form action="/instructors/remove" method="post" target="dummyframe">
+            <input type="text" id="playerName" name="playerName" placeholder="Player Name"><br>
+            <input type="submit" value="Submit">
+        </form>
+
+        <p>Add instructors from file:</p>
+        <form action="/instructors/addFromFile" method="post" enctype="multipart/form-data" target="dummyframe">
+            <input type="file" id="instructorsFile" name="instructorsFile"><br>
+            <input type="submit" value="Submit">
+        </form>
+
+        <!-- Camper utilities -->
+        <h2>Camper Management</h2>
+
+        <p>Add player to the camper list:</p>
+        <form action="/campers/add" method="post" target="dummyframe">
+            <input type="text" id="playerName" name="playerName" placeholder="Player Name"><br>
+            <input type="submit" value="Submit">
+        </form>
+
+        <p>Remove player from the camper list:</p>
+        <form action="/campers/remove" method="post" target="dummyframe">
+            <input type="text" id="playerName" name="playerName" placeholder="Player Name"><br>
+            <input type="submit" value="Submit">
+        </form>
+
+        <p>Rename player in the camper list:</p>
+        <form action="/campers/rename" method="post" target="dummyframe">
+            <input type="text" id="oldPlayerName" name="oldPlayerName" placeholder="Old Player Name"><br>
+            <input type="text" id="newPlayerName" name="newPlayerName" placeholder="New Player Name"><br>
+            <input type="submit" value="Submit">
+        </form>
+
+        <p>Add campers from file:</p>
+        <form action="/campers/addFromFile" method="post" enctype="multipart/form-data" target="dummyframe">
+            <input type="file" id="campersFile" name="campersFile"><br>
+            <input type="submit" value="Submit">
+        </form>
+
+        <!-- Chest location utilities -->
+        <h2>Chest Locations</h2>
+        <p>Set chest location:</p>
+        <form action="/chests/set" method="post" target="dummyframe">
+            <input type="text" id="playerName" name="playerName" placeholder="Player Name"><br>
+            <input type="text" id="x" name="x" placeholder="X"><br>
+            <input type="text" id="y" name="y" placeholder="Y"><br>
+            <input type="text" id="z" name="z" placeholder="Z"><br>
+            <input type="submit" value="Submit">
+        </form>
+
+        <p>Upload Chest Location File:</p>
+        <form action="/chests/addFromFile" method="post" enctype="multipart/form-data" target="dummyframe">
+            <input type="file" id="chestLocationFile" name="chestLocationFile"><br>
+            <input type="submit" value="Submit">
+        </form>
+
+        <!-- System utilities -->
+        <h2>System Utilities</h2>
+
+        <p>Remove all instructors:</p>
+        <button onclick="removeAllInstructors()">Remove All Instructors</button>
+
+        <p>Remove all campers:</p>
+        <button onclick="removeAllCampers()">Remove All Campers</button>
+
+        <p>Clear Chest Locations:</p>
+        <button onclick="clearChestLocations()">Clear Chest Locations</button>
+
+        <p>Clear all Player Data:</p>
+        <button onclick="clearAllPlayerData()">Clear All Player Data</button>
+
+        <p>Kill process:</p>
+        <button onclick="killProcess()">Kill Process</button>
+    </body>
+</html>
