@@ -9,8 +9,8 @@ async function main() {
     const mwss: MinecraftWebSocket = new MinecraftWebSocket(WEBSOCKET_PORT);
 
     // Minecraft REST API
-    const REST_PORT: number = <number><unknown>process.env.REST_PORT || 4006;
-    mwss.startRestServer(REST_PORT);
+    // const REST_PORT: number = <number><unknown>process.env.REST_PORT || 4006;
+    // mwss.startRestServer(REST_PORT);
 
     // Load plugins
     await mwss.loadPlugin(new SFIMCCamp());

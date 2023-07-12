@@ -11,6 +11,9 @@ import { PlayerMessageEvent } from "../../minecraft-be-websocket-api/lib/events/
 import { PlayerTransformEvent } from "../../minecraft-be-websocket-api/lib/events/PlayerTransformEvent.js";
 import { Player } from "../../minecraft-be-websocket-api/lib/game/Player.js";
 import { logger } from "../../minecraft-be-websocket-api/lib/utils.js";
+import { ExampleCommand } from "../../minecraft-be-websocket-api/plugins/ExamplePlugin/ExampleCommand.js";
+import { GMCCommand } from "./GMCCommand.js";
+import { GMSCommand } from "./GMSCommand.js";
 import { SFIDataStore, SFIPlayerData } from './SFIDataStore.js';
 import { SFIRestAPI } from './SFIRestAPI.js';
 
@@ -62,7 +65,7 @@ export class SFIMCCamp extends Plugin {
             if (playerData && playerData.commandAccess === false) return;
 
             if (cmd.length < 2) {
-                await server.tellCommand(playerName, `Usage: ${this.prefferedPrefix}name yourName`);
+                await server.tellCommand(playerName, `Usage: ${this.prefferedPrefix}n yourName`);
                 return;
             }
 
@@ -83,7 +86,7 @@ export class SFIMCCamp extends Plugin {
             await this.ds.addPlayerNameQueue(playerName, realName);
 
             // Send message to instructors
-            await this.broadcastToInstructors(server, `${playerName} has been added to the naming queue. Use "${this.prefferedPrefix}n" to teleport to them.`);
+            await this.broadcastToInstructors(server, `${playerName} has been added to the naming queue. Use "${this.prefferedPrefix}name" to teleport to them.`);
         } catch (error) {
             logger(error, this.name + " Error");
         }
@@ -123,7 +126,7 @@ export class SFIMCCamp extends Plugin {
             }
 
             if (!playerData.realName || playerData.realName === "") {
-                await server.tellCommand(playerName, `You must set your name with "${this.prefferedPrefix}name yourName" before using this command.`);
+                await server.tellCommand(playerName, `You must set your name with "${this.prefferedPrefix}n yourName" before using this command.`);
                 return;
             }
 
@@ -168,7 +171,7 @@ export class SFIMCCamp extends Plugin {
             }
 
             if (!playerData.realName || playerData.realName === "") {
-                await server.tellCommand(playerName, `You must set your name with "${this.prefferedPrefix}name yourName" before using this command.`);
+                await server.tellCommand(playerName, `You must set your name with "${this.prefferedPrefix}n yourName" before using this command.`);
                 return;
             }
 
@@ -216,7 +219,7 @@ export class SFIMCCamp extends Plugin {
             }
 
             if (!playerData.realName || playerData.realName === "") {
-                await server.tellCommand(playerName, `You must set your name with "${this.prefferedPrefix}name yourName" before using this command.`);
+                await server.tellCommand(playerName, `You must set your name with "${this.prefferedPrefix}n yourName" before using this command.`);
                 return;
             }
 
@@ -267,7 +270,7 @@ export class SFIMCCamp extends Plugin {
             }
 
             if (!playerData.realName || playerData.realName === "") {
-                await server.tellCommand(playerName, `You must set your name with "${this.prefferedPrefix}name yourName" before using this command.`);
+                await server.tellCommand(playerName, `You must set your name with "${this.prefferedPrefix}n yourName" before using this command.`);
                 return;
             }
 
@@ -318,7 +321,7 @@ export class SFIMCCamp extends Plugin {
             }
 
             if (!playerData.realName || playerData.realName === "") {
-                await server.tellCommand(playerName, `You must set your name with "${this.prefferedPrefix}name yourName" before using this command.`);
+                await server.tellCommand(playerName, `You must set your name with "${this.prefferedPrefix}n yourName" before using this command.`);
                 return;
             }
 
@@ -355,7 +358,7 @@ export class SFIMCCamp extends Plugin {
             // Get player name from DataStore
             const actualPlayerName: string = playerData.realName;
             if (!actualPlayerName) {
-                await server.tellCommand(playerName, `You must set your name with "${this.prefferedPrefix}name yourName" before using this command.`);
+                await server.tellCommand(playerName, `You must set your name with "${this.prefferedPrefix}n yourName" before using this command.`);
                 return;
             }
 
@@ -598,7 +601,7 @@ export class SFIMCCamp extends Plugin {
 
             // Set title
             await server.sendCommand(`title ${name} times 0 10000 0`);
-            await server.sendCommand(`title ${name} title Please set your name\nusing: .name yourName`);
+            await server.sendCommand(`title ${name} title Please set your name\nusing: ${this.prefferedPrefix}n yourName`);
         } catch (error) {
             logger(error, this.name + " Error");
         }
@@ -685,7 +688,7 @@ export class SFIMCCamp extends Plugin {
             // Command switch
             switch (command) {
                 // Name command
-                case "name":
+                case "n":
                     await this.nameCommand(server, playerName, cmd);
                     break;
 
@@ -730,7 +733,7 @@ export class SFIMCCamp extends Plugin {
                 //     break;
 
                 // n command
-                case "n":
+                case "name":
                     await this.nameUserQueueCommand(server, playerName, cmd);
                     break;
 
@@ -803,11 +806,11 @@ export class SFIMCCamp extends Plugin {
                 await server.gamemodeCommand("adventure", playerName);
 
                 // Send message to player
-                await server.tellCommand(playerName, "Welcome back! To set your name, type .name yourName");
+                await server.tellCommand(playerName, `Welcome back! To set your name, type ${this.prefferedPrefix}n yourName`);
 
                 // Set title
                 await server.sendCommand(`title ${playerName} times 0 10000 0`);
-                await server.sendCommand(`title ${playerName} title Please set your name\nusing: .name yourName`);
+                await server.sendCommand(`title ${playerName} title Please set your name\nusing: ${this.prefferedPrefix}n yourName`);
 
                 // Return
                 return;
@@ -898,6 +901,15 @@ export class SFIMCCamp extends Plugin {
         this.mrest = mwss.getRestServer();
 
         this.restAPI = new SFIRestAPI(this, this.ds);
+
+        // Register commands
+        this.registerCommand(new ExampleCommand());
+
+        // Register gamemode commands
+        this.registerCommand(new GMCCommand());
+        this.registerCommand(new GMSCommand());
+
+        this.addCommandListeners();
 
         logger("Sci-Fi Minecraft Camp plugin started!", this.name);
     }
