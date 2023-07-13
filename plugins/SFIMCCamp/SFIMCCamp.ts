@@ -14,6 +14,7 @@ import { logger } from "../../minecraft-be-websocket-api/lib/utils.js";
 import { ExampleCommand } from "../../minecraft-be-websocket-api/plugins/ExamplePlugin/ExampleCommand.js";
 import { GMCCommand } from "./GMCCommand.js";
 import { GMSCommand } from "./GMSCommand.js";
+import { NameChestCommand } from "./NameChestCommand.js";
 import { SFIDataStore, SFIPlayerData } from './SFIDataStore.js';
 import { SFIRestAPI } from './SFIRestAPI.js';
 
@@ -46,10 +47,10 @@ export class SFIMCCamp extends Plugin {
         );
 
         this.setListeners([
-            { eventName: EventName.PlayerMessage, callback: this.handlePlayerMessage.bind(this) },
-            { eventName: EventName.PlayerJoin, callback: this.handlePlayerJoin.bind(this) },
-            { eventName: EventName.PlayerLeave, callback: this.handlePlayerLeave.bind(this) },
-            { eventName: EventName.PlayerTransform, callback: this.handlePlayerTransform.bind(this) }
+            // { eventName: EventName.PlayerMessage, callback: this.handlePlayerMessage.bind(this) },
+            // { eventName: EventName.PlayerJoin, callback: this.handlePlayerJoin.bind(this) },
+            // { eventName: EventName.PlayerLeave, callback: this.handlePlayerLeave.bind(this) },
+            // { eventName: EventName.PlayerTransform, callback: this.handlePlayerTransform.bind(this) }
         ]);
     }
 
@@ -908,6 +909,9 @@ export class SFIMCCamp extends Plugin {
         // Register gamemode commands
         this.registerCommand(new GMCCommand());
         this.registerCommand(new GMSCommand());
+
+        // Register Name Chest Commands
+        this.registerCommand(new NameChestCommand(this.ds));
 
         this.addCommandListeners();
 

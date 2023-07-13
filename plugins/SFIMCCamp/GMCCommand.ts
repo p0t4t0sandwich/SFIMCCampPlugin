@@ -10,6 +10,7 @@ class GMCCommand extends Command {
         super(
             "GMC Command",
             "Change gamemode to creative",
+            "gmc",
             "-gmc",
             "-", ["!", ".", ","],
             "gmc", true
@@ -20,8 +21,8 @@ class GMCCommand extends Command {
     async execute(server: BedrockServer, player: BedrockPlayer, args: string[]) {
         if (this.hasPermission(player)) {
             // Set gamemode to creative
-            await server.gamemodeCommand(player.getName(), "creative");
-            player.sendMessage("Set gamemode to creative!");
+            await server.gamemodeCommand("creative", player.getName());
+            player.sendMessage("§aSet gamemode to creative!");
         }
     }
 }

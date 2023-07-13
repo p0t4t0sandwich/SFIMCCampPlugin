@@ -10,6 +10,7 @@ class GMSCommand extends Command {
         super(
             "GMS Command",
             "Change gamemode to survival",
+            "gms",
             "-gms",
             "-", ["!", ".", ","],
             "gms", true
@@ -20,8 +21,8 @@ class GMSCommand extends Command {
     async execute(server: BedrockServer, player: BedrockPlayer, args: string[]) {
         if (this.hasPermission(player)) {
             // Set gamemode to survival
-            await server.gamemodeCommand(player.getName(), "survival");
-            player.sendMessage("Set gamemode to survival!");
+            await server.gamemodeCommand("survival", player.getName());
+            player.sendMessage("§aSet gamemode to survival!");
         }
     }
 }
