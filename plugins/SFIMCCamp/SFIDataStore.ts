@@ -429,4 +429,18 @@ export class SFIDataStore extends DataStore {
         await this.setData("Campers", camperData);
         await this.saveData();
     }
+
+    // --------------------------------- Permissions ---------------------------------
+
+    // Load permissions from DataStore
+    async loadPermissions(): Promise<any> {
+        const permissionData = await this.getData("Permissions");
+        return permissionData;
+    }
+
+    // Add permission to DataStore
+    async savePermissions(permissionData: any): Promise<void> {
+        await this.setData("Permissions", JSON.stringify(permissionData));
+        await this.saveData();
+    }
 }
