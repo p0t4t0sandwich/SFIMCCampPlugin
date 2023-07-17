@@ -16,7 +16,7 @@ RUN npm ci
 
 COPY README.md ./
 
-COPY ./minecraft-be-websocket-api ./minecraft-be-websocket-api
+RUN git clone https://github.com/p0t4t0sandwich/minecraft-be-websocket-api.git
 
 COPY ./plugins ./plugins
 
