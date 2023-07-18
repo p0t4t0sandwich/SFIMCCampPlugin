@@ -25,7 +25,7 @@ class NameChestCommand extends Command {
 
     // Methods
     async execute(server: BedrockServer, player: BedrockPlayer, args: string[]) {
-        if (this.ds.isInstructor(player.getName())) {
+        if (await this.ds.isInstructor(player.getName())) {
             if (args.length > 0) {
                 switch (args[0]) {
                     case "help":
