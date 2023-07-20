@@ -49,7 +49,7 @@ class NameChestCommand extends Command {
                     case "get":
                         if (args.length >= 2) {
                             const playerName = player.getName();
-                            const chestName = args[1];
+                            const chestName = args[1].toLowerCase();
                             const chestLocation = await this.ds.getChestLocation(chestName);
 
                             if (chestLocation == undefined) {

@@ -238,6 +238,7 @@ export class SFIDataStore extends DataStore {
     // Set chest location in DataStore
     async setChestLocation(realName: string, chestLocation: positionData): Promise<void> {
         const data = await this.getData("ChestLocations");
+        realName = realName.toLowerCase();
         data[realName] = chestLocation;
         await this.setData("ChestLocations", data);
         await this.saveData();
