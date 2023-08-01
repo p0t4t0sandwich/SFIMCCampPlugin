@@ -52,6 +52,11 @@ class NameChestCommand extends Command {
                             const chestName = args[1].toLowerCase();
                             const chestLocation = await this.ds.getChestLocation(chestName);
 
+                            const playerPos: { x: number, y: number, z: number } = player.player.position;
+                            playerPos.x = Math.floor(playerPos.x);
+                            playerPos.y = Math.floor(playerPos.y);
+                            playerPos.z = Math.floor(playerPos.z);
+
                             if (chestLocation == undefined) {
                                 player.sendMessage(`§cChest with name §6${chestName} §cdoes not exist!`);
                                 return;
@@ -61,10 +66,10 @@ class NameChestCommand extends Command {
                             player.sendMessage(`§aChest location: §6${chestLocation.x}, ${chestLocation.y}, ${chestLocation.z}`);
 
                             // Clone the chest to the player's location
-                            await server.sendCommand(`execute as ${playerName} run clone ${chestLocation.x} ${chestLocation.y} ${chestLocation.z} ${chestLocation.x} ${chestLocation.y} ${chestLocation.z} ~ ~ ~`);
+                            await server.sendCommand(`execute as ${playerName} run clone ${chestLocation.x} ${chestLocation.y} ${chestLocation.z} ${chestLocation.x} ${chestLocation.y} ${chestLocation.z} ${playerPos.x} ${playerPos.y} ${playerPos.z}`);
 
                             // Break the chest with setblock
-                            await server.sendCommand(`execute as ${playerName} run setblock ~ ~ ~ air 0 destroy`);
+                            await server.sendCommand(`execute as ${playerName} run setblock ${playerPos.x} ${playerPos.y} ${playerPos.z} air 0 destroy`);
 
                             // Send confirmation message
                             await server.tellCommand(playerName, `Cloned the nametag chest for ${chestName} to your location.`);
